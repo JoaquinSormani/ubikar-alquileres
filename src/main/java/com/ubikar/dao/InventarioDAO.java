@@ -26,6 +26,26 @@ public class InventarioDAO {
         return con.createQuery(sql, true).bind(i).executeUpdate().getKey(Integer.class);
     }
 
+    public Inventario selectById(Integer id) {
+        String sql = "SELECT * FROM inventario WHERE id = :id";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("id", id)
+                    .executeAndFetchFirst(Inventario.class);
+        }
+    }
+
+    public void update(Inventario i) {
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            update(con, i);
+        }
+    }
+
+    public void update(Connection con, Inventario i) {
+        String sql = "UPDATE inventario SET fechaRegistro = :fechaRegistro WHERE id = :id";
+        con.createQuery(sql).bind(i).executeUpdate();
+    }
+
     public void delete(Integer id) {
         String sql = "DELETE FROM inventario WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {

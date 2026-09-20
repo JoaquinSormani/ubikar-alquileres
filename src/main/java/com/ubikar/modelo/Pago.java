@@ -10,9 +10,9 @@ public class Pago {
     private LocalDate fecha;
     private BigDecimal monto;
     private BigDecimal indiceActualizacion;
-    private Integer diasAtraso;
-    private BigDecimal punitorio;
-    private EstadoPago estado;
+    private Integer diasAtraso = 0;
+    private BigDecimal punitorio = BigDecimal.ZERO;
+    private EstadoPago estado = EstadoPago.PENDIENTE;
 
     public Integer getId() {
         return id;

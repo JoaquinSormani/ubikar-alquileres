@@ -1,6 +1,8 @@
 package com.ubikar.dao;
 
 import com.ubikar.modelo.Contrato;
+import com.ubikar.modelo.Garante;
+import com.ubikar.modelo.Inquilino;
 import java.time.LocalDate;
 import java.util.List;
 import org.sql2o.Connection;
@@ -20,6 +22,35 @@ public class ContratoDAO {
             return con.createQuery(sql)
                     .addParameter("id", id)
                     .executeAndFetchFirst(Contrato.class);
+        }
+    }
+
+    public List<Contrato> selectByPropiedad(Integer idPropiedad) {
+        String sql = "SELECT * FROM contrato WHERE idPropiedad = :idPropiedad ORDER BY fechaInicio";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("idPropiedad", idPropiedad)
+                    .executeAndFetch(Contrato.class);
+        }
+    }
+
+    public List<Inquilino> selectInquilinos(Integer idContrato) {
+        String sql = "SELECT i.* FROM inquilino i JOIN contrato_inquilino ci ON ci.idInquilino = i.id "
+                + "WHERE ci.idContrato = :idContrato";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("idContrato", idContrato)
+                    .executeAndFetch(Inquilino.class);
+        }
+    }
+
+    public List<Garante> selectGarantes(Integer idContrato) {
+        String sql = "SELECT g.* FROM garante g JOIN contrato_garante cg ON cg.idGarante = g.id "
+                + "WHERE cg.idContrato = :idContrato";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("idContrato", idContrato)
+                    .executeAndFetch(Garante.class);
         }
     }
 

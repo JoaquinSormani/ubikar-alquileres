@@ -51,3 +51,23 @@ Flujo: `contrato.html` (6 pasos) -> `POST /api/contratos` -> `ContratoServicio` 
 - El modelo completo deja renglones `__________` para lo que el sistema no conoce (horario y cuenta bancaria de cobro, marca/color de pintura, porcentajes de penalidad y sellado): se completan a mano en Word.
 - Los contratos generados se guardan en `documentos/contratos/` y se registran como `Documentacion` de tipo `CONTRATO`. Un ejemplo de salida esta en `documentos/ejemplo/`.
 - Para agregar otro modelo de contrato: nueva plantilla `.docx` + una clase que implemente `GeneradorContrato`, y registrarla en `ContratoServicio`.
+
+## Trabajo en equipo: como sumar un caso de uso
+
+Ya esta disponible para todos:
+- Las 12 clases del modelo de dominio (`modelo/`) y sus tablas (`bd_ubikar.sql`).
+- Un DAO con CRUD completo por entidad (`dao/`): Propietario, Inquilino, Garante, Propiedad, Contrato (con `vincularInquilino/Garante`), Inventario, RenglonInventario, Documentacion, **Pago, Liquidacion y Mantenimiento** (con `selectByContrato`, `selectByEstado`, `selectByPago`, etc.). `Sql2oDAO` es el Singleton de conexion.
+- Un caso de uso completo como referencia: `ContratoControlador` -> `ContratoServicio` -> DAOs (+ `frontend/contrato.html`).
+
+Como armar un caso de uso nuevo (misma estructura en capas):
+1. `controlador/`: endpoint REST que recibe el pedido y traduce errores a HTTP (ver `ContratoControlador`).
+2. `servicio/`: reglas de negocio y validaciones; lanza `IllegalArgumentException` con un mensaje claro cuando los datos no sirven.
+3. `dao/`: solo SQL. Para guardar varias cosas juntas, los DAO tienen `insert(Connection, X)` y `update(Connection, X)`: abrir `Sql2oDAO.getSql2o().beginTransaction()`, usar esas variantes y cerrar con `con.commit(false)`; si algo falla, todo se revierte solo (ver `ContratoServicio.registrar`).
+4. `frontend/`: pagina HTML/JS que consume la API, reutilizando `portal.css` para mantener la identidad de marca.
+5. Tests que no necesiten la base en `src/test` (ver `documento/`), asi `mvn package` no depende de MySQL.
+
+Convenciones para no pisarnos:
+- Una rama por caso de uso (por ejemplo `cu/registrar-pago`) y Pull Request a `main`.
+- Los DAO y el modelo son compartidos: si necesitas un metodo o campo nuevo, agregalo (no cambies los existentes) y avisa al grupo.
+- Un cambio de esquema se hace en `bd_ubikar.sql` **y** se avisa: los demas deben aplicarlo con un `ALTER TABLE` en su base (el script completo borra y recrea la base `ubikar`).
+- Antes de subir: `mvn test`. No subir `target/` ni los contratos generados (ya estan en `.gitignore`).

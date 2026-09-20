@@ -15,6 +15,15 @@ public class RenglonInventarioDAO {
         }
     }
 
+    public RenglonInventario selectById(Integer id) {
+        String sql = "SELECT * FROM renglon_inventario WHERE id = :id";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("id", id)
+                    .executeAndFetchFirst(RenglonInventario.class);
+        }
+    }
+
     public Integer insert(RenglonInventario r) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return insert(con, r);

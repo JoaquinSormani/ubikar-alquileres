@@ -27,6 +27,27 @@ public class DocumentacionDAO {
         return con.createQuery(sql, true).bind(d).executeUpdate().getKey(Integer.class);
     }
 
+    public Documentacion selectById(Integer id) {
+        String sql = "SELECT * FROM documentacion WHERE id = :id";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("id", id)
+                    .executeAndFetchFirst(Documentacion.class);
+        }
+    }
+
+    public void update(Documentacion d) {
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            update(con, d);
+        }
+    }
+
+    public void update(Connection con, Documentacion d) {
+        String sql = "UPDATE documentacion SET idContrato = :idContrato, tipo = :tipo, "
+                + "archivo = :archivo, fechaCarga = :fechaCarga WHERE id = :id";
+        con.createQuery(sql).bind(d).executeUpdate();
+    }
+
     public void delete(Integer id) {
         String sql = "DELETE FROM documentacion WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
