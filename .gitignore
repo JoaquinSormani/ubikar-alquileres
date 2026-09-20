@@ -1,0 +1,18 @@
+target/
+.idea/
+*.iml
+.vscode/
+.antigravity/
+nbproject/private/
+nb-configuration.xml
+*.class
+*.log
+
+# contratos generados en tiempo de ejecucion (los ejemplos viven en documentos/ejemplo/)
+documentos/contratos/
+
+# borradores de logos sin usar (los oficiales estan en LOGO/ y en frontend/assets/)
+LOGO/LOGO/
+LOGO/Nueva carpeta/
+LOGO/[0-9].png
+LOGO/Logo con Tipografía*.png

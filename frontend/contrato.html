@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBIKAR - Nuevo contrato de alquiler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="contrato.css">
+</head>
+<body>
+
+<div class="wz">
+  <header class="wz__header">
+    <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
+    <div>
+      <h1 class="wz__title">Nuevo contrato de alquiler</h1>
+      <p class="wz__sub">Cargá los datos una sola vez: el contrato en Word se completa solo.</p>
+    </div>
+  </header>
+
+  <p class="wz-error" id="offline" role="alert" hidden>
+    No hay conexión con el servidor. Verificá que el backend esté corriendo en <code>localhost:8081</code> y recargá la página.
+  </p>
+
+  <ol class="steps" id="steps" aria-label="Progreso"></ol>
+
+  <form id="wizard" novalidate>
+
+    <section class="wz-step" data-step="1" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Propietario y propiedad</h2>
+      <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos y sus propiedades.</p>
+      <div id="propietarioSlot"></div>
+
+      <div class="propiedad">
+        <label class="field" id="propiedadSelectField" hidden>
+          <span class="field__label">Propiedad</span>
+          <select class="field__input" id="propiedadSelect"></select>
+        </label>
+        <label class="field" id="direccionField">
+          <span class="field__label">Dirección del inmueble</span>
+          <input class="field__input" id="direccionInput" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off">
+        </label>
+      </div>
+    </section>
+
+    <section class="wz-step" data-step="2" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Inquilinos</h2>
+      <p class="wz-step__hint">Un contrato puede tener más de un inquilino (por ejemplo, una pareja).</p>
+      <div id="inquilinosSlot"></div>
+      <button type="button" class="btn btn--ghost" id="addInquilinoBtn">Agregar otro inquilino</button>
+    </section>
+
+    <section class="wz-step" data-step="3" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Garantía</h2>
+      <p class="wz-step__hint">Elegí cómo se garantiza el alquiler. Con fiador o recibo de sueldo hace falta cargar al garante.</p>
+      <label class="field wz-narrow">
+        <span class="field__label">Tipo de garantía</span>
+        <select class="field__input" id="tipoGarantia"></select>
+      </label>
+      <div id="garantesBloque" hidden>
+        <div id="garantesSlot"></div>
+        <button type="button" class="btn btn--ghost" id="addGaranteBtn">Agregar otro garante</button>
+      </div>
+    </section>
+
+    <section class="wz-step" data-step="4" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Condiciones del contrato</h2>
+      <p class="wz-step__hint">La fecha de fin, los montos en letras y las fechas de la firma los calcula el sistema.</p>
+      <div class="grid2">
+        <label class="field">
+          <span class="field__label">Fecha de inicio</span>
+          <input class="field__input" type="date" id="fechaInicio">
+        </label>
+        <label class="field">
+          <span class="field__label">Duración (meses)</span>
+          <input class="field__input field__input--mono" type="number" id="duracionMeses" min="1" value="12">
+        </label>
+        <label class="field">
+          <span class="field__label">Alquiler mensual inicial ($)</span>
+          <input class="field__input field__input--mono" type="number" id="valorInicial" min="0" step="0.01" inputmode="decimal">
+        </label>
+        <label class="field">
+          <span class="field__label">Actualización cada (meses)</span>
+          <input class="field__input field__input--mono" type="number" id="periodicidad" min="1" value="3">
+        </label>
+        <label class="field">
+          <span class="field__label">Índice de actualización</span>
+          <select class="field__input" id="indice">
+            <option value="ICL">ICL (Banco Central)</option>
+            <option value="IPC">IPC (INDEC)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">Destino del inmueble</span>
+          <select class="field__input" id="destino">
+            <option value="VIVIENDA">Vivienda</option>
+            <option value="COMERCIAL">Comercial</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">Depósito en garantía ($)</span>
+          <input class="field__input field__input--mono" type="number" id="deposito" min="0" step="0.01" inputmode="decimal" placeholder="Vacío = un mes de alquiler">
+        </label>
+        <label class="field">
+          <span class="field__label">Modelo de contrato</span>
+          <select class="field__input" id="plantilla">
+            <option value="estandar">Estándar UBIKAR (14 cláusulas)</option>
+            <option value="completa">Completo (20 cláusulas)</option>
+          </select>
+        </label>
+      </div>
+      <p class="derivados" id="derivados" aria-live="polite"></p>
+      <p class="hint" id="plantillaHint" hidden>
+        El modelo completo deja una línea en blanco (__________) en los datos que el sistema no conoce: horario y cuenta bancaria de cobro, marca y color de pintura, y porcentajes de penalidad y sellado. Se completan a mano en Word.
+      </p>
+    </section>
+
+    <section class="wz-step" data-step="5" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Inventario de la propiedad</h2>
+      <p class="wz-step__hint">Estado de cada elemento al entregar la propiedad. Se anexa al contrato y sirve para comparar al finalizar.</p>
+      <div class="presets" id="presets" aria-label="Agregar ambiente típico"></div>
+      <div class="inv" id="invSlot">
+        <div class="inv__head" aria-hidden="true">
+          <span>Ambiente</span><span>Elemento</span><span>Estado</span><span>Observaciones</span><span></span>
+        </div>
+      </div>
+      <button type="button" class="btn btn--ghost" id="addRenglonBtn">Agregar elemento</button>
+    </section>
+
+    <section class="wz-step" data-step="6" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Revisión</h2>
+      <p class="wz-step__hint">Controlá los datos. Al generar, se guarda todo junto y se crea el contrato en Word.</p>
+      <div class="review" id="review"></div>
+    </section>
+
+    <p class="wz-error" id="stepError" role="alert" hidden></p>
+
+    <div class="wz-actions" id="actions">
+      <button type="button" class="btn btn--ghost" id="prevBtn" hidden>Anterior</button>
+      <button type="button" class="btn btn--primary" id="nextBtn">Siguiente</button>
+    </div>
+  </form>
+
+  <section class="exito" id="exito" hidden>
+    <div class="exito__mark" aria-hidden="true">✓</div>
+    <h2 class="wz-step__title" tabindex="-1" id="exitoTitulo">Contrato registrado</h2>
+    <p class="wz-step__hint" id="exitoDetalle"></p>
+    <div class="exito__actions">
+      <a class="btn btn--primary" id="descargarLink" href="#" download>Descargar contrato (.docx)</a>
+      <button type="button" class="btn btn--ghost" id="otroBtn">Registrar otro contrato</button>
+    </div>
+  </section>
+</div>
+
+<template id="tplPersona">
+  <fieldset class="persona">
+    <div class="persona__head">
+      <legend class="persona__title"></legend>
+      <button type="button" class="linklike persona__remove" hidden>Quitar</button>
+    </div>
+    <div class="persona__dni">
+      <label class="field">
+        <span class="field__label">DNI</span>
+        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+      </label>
+      <button type="button" class="btn btn--ghost persona__buscar">Buscar</button>
+    </div>
+    <p class="persona__estado" role="status"></p>
+    <div class="grid2">
+      <label class="field">
+        <span class="field__label">Nombre</span>
+        <input class="field__input" data-f="nombre" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field__label">Apellido</span>
+        <input class="field__input" data-f="apellido" autocomplete="off">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field__label">Domicilio (figura en el contrato)</span>
+      <input class="field__input" data-f="domicilio" autocomplete="off">
+    </label>
+    <div class="grid2">
+      <label class="field">
+        <span class="field__label">Teléfono</span>
+        <input class="field__input" data-f="telefono" inputmode="tel" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field__label">Correo electrónico</span>
+        <input class="field__input" data-f="email" type="email" autocomplete="off">
+      </label>
+    </div>
+    <label class="field persona__detalle" hidden>
+      <span class="field__label">Detalle de la garantía (empleador, CUIT, cargo, legajo, matrícula…)</span>
+      <input class="field__input" data-f="detalle" autocomplete="off">
+    </label>
+  </fieldset>
+</template>
+
+<script src="contrato.js"></script>
+</body>
+</html>

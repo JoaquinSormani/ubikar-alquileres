@@ -1,0 +1,130 @@
+<!--
+THESIS: el portal es una ficha de cuenta, no un dashboard generico de tarjetas. Un solo
+panel dominante responde "cuanto debo/cobro y para cuando" antes que nada; todo lo demas
+es un registro cronologico debajo, como una libreta de recibos.
+OWN-WORLD: paleta de marca real de UBIKAR (logo + board Pantone del cliente) — fondo
+crema #F2EBE3, tinta coffee bean #40312F, acento terracota #A8583F (isotipo), wine
+#3F1521 y navy #2E4157 (del wordmark "UBIKAR"). Playfair Display para el wordmark y
+titulares, DM Sans para interfaz y datos.
+STORY: inquilino o propietario ingresan su DNI (una unica puerta de entrada, como pide
+el caso de uso base "Acceder al Portal"); el sistema detecta el rol y muestra el panel
+que corresponde: deuda + recibos + subir comprobante para el inquilino, liquidacion +
+historial + descarga para el propietario.
+FIRST VIEWPORT: formulario de acceso centrado, mínimo, sin card generico alrededor.
+FORM: direccion propia (no surgida del roll de conceptos de Impeccable — ver nota al
+usuario), sobria a proposito porque el modo es Operate: la tarea manda, no la puesta
+en escena.
+FINISH: unreviewed and undocumented is unfinished; este build corta antes del ciclo
+completo de finish-review/documenter de Impeccable (ver aviso al usuario), asi que
+no se marca DESIGN.md como cerrado.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBIKAR - Portal de Autogestión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css">
+</head>
+<body>
+
+  <main class="access" id="accessView">
+    <div class="access__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+    <h1 class="access__title">Portal de autogestión</h1>
+    <p class="access__hint">Ingresá tu DNI para ver tu alquiler o tus liquidaciones.</p>
+
+    <form class="access__form" id="accessForm" novalidate>
+      <label class="field">
+        <span class="field__label">DNI</span>
+        <input class="field__input field__input--mono" type="text" id="dniInput" inputmode="numeric" autocomplete="off" placeholder="30111222" required>
+      </label>
+      <button class="btn btn--primary" type="submit">
+        <span>Ingresar</span>
+      </button>
+      <p class="access__error" id="accessError" role="alert" hidden></p>
+    </form>
+
+    <p class="access__demo">Ejemplos para probar:
+      <button type="button" class="linklike" data-demo-dni="30111222">30111222</button> (inquilino) ·
+      <button type="button" class="linklike" data-demo-dni="28555444">28555444</button> (propietario) ·
+      <button type="button" class="linklike" data-demo-dni="27888999">27888999</button> (ambos roles)
+    </p>
+  </main>
+
+  <main class="access" id="roleChoiceView" hidden>
+    <div class="access__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+    <h1 class="access__title">¿Cómo querés ingresar?</h1>
+    <p class="access__hint">Ese DNI está registrado como inquilino y como propietario. Elegí con qué rol querés ver el portal esta vez.</p>
+
+    <div class="role-choice">
+      <button type="button" class="role-choice__option" id="chooseInquilinoBtn">
+        <span class="role-choice__label">Como inquilino</span>
+        <span class="role-choice__hint">Ver mi deuda y mis recibos</span>
+      </button>
+      <button type="button" class="role-choice__option" id="choosePropietarioBtn">
+        <span class="role-choice__label">Como propietario</span>
+        <span class="role-choice__hint">Ver mis liquidaciones</span>
+      </button>
+    </div>
+
+    <button type="button" class="linklike" id="backToAccessBtn">Volver</button>
+  </main>
+
+  <div class="portal" id="portalView" hidden>
+    <header class="portal__header">
+      <div>
+        <div class="portal__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+        <h1 class="portal__name" id="tenantName">—</h1>
+        <p class="portal__role" id="roleLabel">—</p>
+      </div>
+      <button class="btn btn--ghost" id="logoutBtn" type="button">Salir</button>
+    </header>
+
+    <section class="status" aria-labelledby="statusHeading">
+      <h2 class="status__heading" id="statusHeading">—</h2>
+      <div class="status__row">
+        <div class="status__amount-block">
+          <span class="status__amount" id="statusAmount">—</span>
+          <span class="status__period" id="statusPeriod">—</span>
+        </div>
+        <span class="badge" id="statusBadge">—</span>
+      </div>
+      <p class="status__due" id="statusDue">—</p>
+      <div class="status__actions">
+        <button class="btn btn--primary" id="uploadTriggerBtn" type="button">Subir comprobante</button>
+        <button class="btn btn--primary" id="downloadTriggerBtn" type="button" hidden>Descargar liquidación</button>
+        <button class="btn btn--ghost" id="reminderBtn" type="button">Pedir recordatorio por WhatsApp</button>
+      </div>
+    </section>
+
+    <section class="history" aria-labelledby="historyHeading">
+      <h2 class="history__heading" id="historyHeading">—</h2>
+      <ul class="ledger" id="ledgerList"></ul>
+    </section>
+
+    <p class="demo-note" id="demoNote">—</p>
+  </div>
+
+  <div class="modal-layer" id="uploadModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+      <h2 class="modal__title" id="uploadTitle">Subir comprobante</h2>
+      <p class="modal__hint">Adjuntá una foto o PDF del comprobante de pago de este mes.</p>
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <span id="dropzoneLabel">Arrastrá el archivo aquí o hacé clic para elegirlo</span>
+        <input type="file" id="fileInput" accept="image/*,.pdf" hidden>
+      </label>
+      <div class="modal__actions">
+        <button class="btn btn--ghost" id="cancelUploadBtn" type="button">Cancelar</button>
+        <button class="btn btn--primary" id="confirmUploadBtn" type="button" disabled>Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="portal.js"></script>
+</body>
+</html>

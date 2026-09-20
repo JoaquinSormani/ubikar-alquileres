@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>UBIKAR - Inquilinos</title>
+</head>
+<body>
+  <h1>UBIKAR - Inquilinos (prueba de conexion)</h1>
+
+  <h2>Alta de inquilino</h2>
+  <label for="nombre">Nombre:</label>
+  <input type="text" id="nombre">
+  <br><br>
+  <label for="apellido">Apellido:</label>
+  <input type="text" id="apellido">
+  <br><br>
+  <label for="dni">DNI:</label>
+  <input type="text" id="dni">
+  <br><br>
+  <label for="telefono">Telefono:</label>
+  <input type="text" id="telefono">
+  <br><br>
+  <label for="email">Email:</label>
+  <input type="text" id="email">
+  <br><br>
+  <button onclick="crearInquilino()">Guardar</button>
+
+  <h2>Listado</h2>
+  <button onclick="cargarInquilinos()">Refrescar</button>
+  <ul id="listaInquilinos"></ul>
+
+  <script src="script.js"></script>
+</body>
+</html>
