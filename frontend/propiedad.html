@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBIKAR - Registrar propiedad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="contrato.css">
+<link rel="stylesheet" href="propiedad.css">
+</head>
+<body>
+
+<div class="wz">
+  <header class="wz__header">
+    <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
+    <div>
+      <h1 class="wz__title">Registrar propiedad</h1>
+      <p class="wz__sub">Elegí al propietario y cargá la dirección del inmueble.</p>
+    </div>
+  </header>
+
+  <p class="wz-error" id="offline" role="alert" hidden>
+    No hay conexión con el servidor. Verificá que el backend esté corriendo en <code>localhost:8081</code> y recargá la página.
+  </p>
+
+  <ol class="steps" id="steps" aria-label="Progreso"></ol>
+
+  <form id="wizard" novalidate>
+
+    <section class="wz-step" data-step="1" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Propietario</h2>
+      <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos; si no, se da de alta junto con la propiedad.</p>
+      <div id="propietarioSlot"></div>
+    </section>
+
+    <section class="wz-step" data-step="2" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Datos de la propiedad</h2>
+      <p class="wz-step__hint">La propiedad queda asociada al propietario elegido.</p>
+
+      <div class="resumen">
+        <span>Propietario: <span class="resumen__nombre" id="resumenNombre"></span> · DNI <span id="resumenDni"></span></span>
+        <button type="button" class="linklike" id="cambiarBtn">Cambiar</button>
+      </div>
+
+      <label class="field">
+        <span class="field__label">Dirección del inmueble</span>
+        <input class="field__input" id="direccionInput" maxlength="200" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off">
+      </label>
+      <p class="hint" id="avisoNuevo" hidden>Este propietario es nuevo: se da de alta junto con la propiedad.</p>
+
+      <div class="existentes" id="existentes" hidden>
+        <h3 class="existentes__titulo">Propiedades ya registradas de este propietario</h3>
+        <ul class="existentes__lista" id="existentesLista"></ul>
+      </div>
+    </section>
+
+    <p class="wz-error" id="stepError" role="alert" hidden></p>
+
+    <div class="wz-actions" id="actions">
+      <button type="button" class="btn btn--ghost" id="prevBtn" hidden>Anterior</button>
+      <button type="button" class="btn btn--primary" id="nextBtn">Siguiente</button>
+    </div>
+  </form>
+
+  <section class="exito" id="exito" hidden>
+    <div class="exito__mark" aria-hidden="true">✓</div>
+    <h2 class="wz-step__title" tabindex="-1" id="exitoTitulo">Propiedad registrada</h2>
+    <p class="wz-step__hint" id="exitoDetalle"></p>
+    <div class="review exito__datos">
+      <dl id="exitoDatos"></dl>
+    </div>
+    <div class="exito__actions">
+      <button type="button" class="btn btn--primary" id="otraBtn">Registrar otra propiedad</button>
+      <a class="btn btn--ghost" href="contrato.html">Registrar un contrato</a>
+    </div>
+  </section>
+</div>
+
+<template id="tplPersona">
+  <fieldset class="persona">
+    <div class="persona__head">
+      <legend class="persona__title">Propietario</legend>
+    </div>
+    <div class="persona__dni">
+      <label class="field">
+        <span class="field__label">DNI</span>
+        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+      </label>
+      <button type="button" class="btn btn--ghost persona__buscar">Buscar</button>
+    </div>
+    <p class="persona__estado" role="status"></p>
+    <div class="grid2">
+      <label class="field">
+        <span class="field__label">Nombre</span>
+        <input class="field__input" data-f="nombre" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field__label">Apellido</span>
+        <input class="field__input" data-f="apellido" autocomplete="off">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field__label">Domicilio</span>
+      <input class="field__input" data-f="domicilio" autocomplete="off">
+    </label>
+    <div class="grid2">
+      <label class="field">
+        <span class="field__label">Teléfono</span>
+        <input class="field__input" data-f="telefono" inputmode="tel" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field__label">Correo electrónico</span>
+        <input class="field__input" data-f="email" type="email" autocomplete="off">
+      </label>
+    </div>
+  </fieldset>
+</template>
+
+<script src="propiedad.js"></script>
+</body>
+</html>
