@@ -58,6 +58,7 @@ public class ContratoServicio {
     }
 
     public Contrato registrar(SolicitudContrato s) {
+        resolverPropietarioYPropiedad(s);
         validar(s);
         GeneradorContrato generador = generadores.get(s.getPlantilla() == null ? PLANTILLA_POR_DEFECTO : s.getPlantilla());
         LocalDate fechaFin = s.getFechaInicio().plusMonths(s.getDuracionMeses()).minusDays(1);
@@ -65,23 +66,7 @@ public class ContratoServicio {
         Path archivo = null;
         try (Connection con = Sql2oDAO.getSql2o().beginTransaction()) {
             Propietario propietario = s.getPropietario();
-            if (propietario.getId() == null) {
-                propietario.setId(propietarioDAO.insert(con, propietario));
-            } else {
-                propietarioDAO.update(con, propietario);
-            }
-
             Propiedad propiedad = s.getPropiedad();
-            if (propiedad.getId() == null) {
-                propiedad.setIdPropietario(propietario.getId());
-                propiedad.setId(propiedadDAO.insert(con, propiedad));
-            } else {
-                Propiedad existente = propiedadDAO.selectById(propiedad.getId());
-                if (existente == null || !existente.getIdPropietario().equals(propietario.getId())) {
-                    throw new IllegalArgumentException("La propiedad elegida no pertenece al propietario indicado.");
-                }
-                propiedad = existente;
-            }
 
             if (contratoDAO.existeContratoSuperpuesto(propiedad.getId(), s.getFechaInicio(), fechaFin)) {
                 throw new IllegalArgumentException("La propiedad ya tiene un contrato vigente en ese período.");
@@ -162,13 +147,24 @@ public class ContratoServicio {
         return null;
     }
 
+    // El propietario y la propiedad los da de alta el CU "Registrar Propiedad": aca solo se buscan.
+    // Se leen de la base por id y se descartan los datos que haya mandado el cliente.
+    private void resolverPropietarioYPropiedad(SolicitudContrato s) {
+        requerido(s.getPropietario() != null && s.getPropietario().getId() != null,
+                "Falta elegir un propietario registrado.");
+        requerido(s.getPropiedad() != null && s.getPropiedad().getId() != null,
+                "Falta elegir una propiedad registrada.");
+        Propietario propietario = propietarioDAO.selectById(s.getPropietario().getId());
+        requerido(propietario != null, "El propietario indicado no está registrado. Registralo primero desde Registrar Propiedad.");
+        Propiedad propiedad = propiedadDAO.selectById(s.getPropiedad().getId());
+        requerido(propiedad != null && propiedad.getIdPropietario().equals(propietario.getId()),
+                "La propiedad elegida no pertenece al propietario indicado.");
+        s.setPropietario(propietario);
+        s.setPropiedad(propiedad);
+    }
+
     private void validar(SolicitudContrato s) {
-        requerido(s.getPropietario() != null, "Falta el propietario.");
-        requerido(s.getPropiedad() != null, "Falta la propiedad.");
         validarPersona(s.getPropietario(), "propietario");
-        if (s.getPropiedad().getId() == null) {
-            requerido(hayTexto(s.getPropiedad().getDireccion()), "Falta la dirección de la propiedad.");
-        }
 
         requerido(!s.getInquilinos().isEmpty(), "El contrato necesita al menos un inquilino.");
         for (Inquilino i : s.getInquilinos()) {
