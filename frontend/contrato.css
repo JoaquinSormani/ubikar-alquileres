@@ -235,7 +235,7 @@ select.field__input {
 
 .persona__estado {
   min-height: 1.3em;
-  margin: 8px 0 14px;
+  margin: 8px 0 0;
   font-size: 0.84rem;
   color: var(--ink-soft);
 }
@@ -352,12 +352,10 @@ select.field__input {
   margin-bottom: 0;
 }
 
-.persona .grid2 {
-  margin-bottom: 14px;
-}
-
-.persona__detalle {
-  margin-top: 14px;
+/* separacion uniforme (16 px) entre filas: cada fila se separa de la anterior por arriba */
+.persona > .grid2,
+.persona > .field {
+  margin: 16px 0 0;
 }
 
 .propiedad {
