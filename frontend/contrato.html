@@ -25,24 +25,33 @@
     No hay conexión con el servidor. Verificá que el backend esté corriendo en <code>localhost:8081</code> y recargá la página.
   </p>
 
+  <div class="borrador" id="borrador" hidden>
+    <p class="borrador__texto" id="borradorTexto">Recuperamos lo que estabas cargando.</p>
+    <button type="button" class="linklike" id="descartarBtn">Descartar y empezar de nuevo</button>
+    <span id="confirmarBloque" hidden>
+      <button type="button" class="linklike linklike--peligro" id="confirmarSi">Sí, descartar</button>
+      <button type="button" class="linklike" id="confirmarNo">No, seguir</button>
+    </span>
+  </div>
+
   <ol class="steps" id="steps" aria-label="Progreso"></ol>
 
+  <div class="wz__cols" id="cols">
   <form id="wizard" novalidate>
+
+    <p class="req-nota"><span class="req" aria-hidden="true">*</span> Dato obligatorio</p>
 
     <section class="wz-step" data-step="1" hidden>
       <h2 class="wz-step__title" tabindex="-1">Propietario y propiedad</h2>
-      <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos y sus propiedades.</p>
+      <p class="wz-step__hint">Buscá al propietario por su DNI y elegí la propiedad. Si todavía no está cargado, registralo desde «Registrar propiedad».</p>
       <div id="propietarioSlot"></div>
 
       <div class="propiedad">
         <label class="field" id="propiedadSelectField" hidden>
-          <span class="field__label">Propiedad</span>
-          <select class="field__input" id="propiedadSelect"></select>
+          <span class="field__label">Propiedad <span class="req" aria-hidden="true">*</span></span>
+          <select class="field__input" id="propiedadSelect" required></select>
         </label>
-        <label class="field" id="direccionField">
-          <span class="field__label">Dirección del inmueble</span>
-          <input class="field__input" id="direccionInput" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off">
-        </label>
+        <p class="hint" id="sinPropiedades" hidden>Este propietario todavía no tiene propiedades registradas. Cargala primero desde <a href="propiedad.html">Registrar propiedad</a>.</p>
       </div>
     </section>
 
@@ -56,10 +65,10 @@
     <section class="wz-step" data-step="3" hidden>
       <h2 class="wz-step__title" tabindex="-1">Garantía</h2>
       <p class="wz-step__hint">Elegí cómo se garantiza el alquiler. Con fiador o recibo de sueldo hace falta cargar al garante.</p>
-      <label class="field wz-narrow">
-        <span class="field__label">Tipo de garantía</span>
-        <select class="field__input" id="tipoGarantia"></select>
-      </label>
+      <fieldset class="radios radios--lista" id="tipoGarantia">
+        <legend class="field__label">Tipo de garantía <span class="req" aria-hidden="true">*</span></legend>
+        <div class="radios__opciones"></div>
+      </fieldset>
       <div id="garantesBloque" hidden>
         <div id="garantesSlot"></div>
         <button type="button" class="btn btn--ghost" id="addGaranteBtn">Agregar otro garante</button>
@@ -71,51 +80,39 @@
       <p class="wz-step__hint">La fecha de fin, los montos en letras y las fechas de la firma los calcula el sistema.</p>
       <div class="grid2">
         <label class="field">
-          <span class="field__label">Fecha de inicio</span>
-          <input class="field__input" type="date" id="fechaInicio">
+          <span class="field__label">Fecha de inicio <span class="req" aria-hidden="true">*</span></span>
+          <input class="field__input" type="date" id="fechaInicio" required>
         </label>
         <label class="field">
-          <span class="field__label">Duración (meses)</span>
-          <input class="field__input field__input--mono" type="number" id="duracionMeses" min="1" value="12">
+          <span class="field__label">Duración (meses) <span class="req" aria-hidden="true">*</span></span>
+          <input class="field__input field__input--mono" type="number" id="duracionMeses" min="1" value="12" required>
         </label>
         <label class="field">
-          <span class="field__label">Alquiler mensual inicial ($)</span>
-          <input class="field__input field__input--mono" type="number" id="valorInicial" min="0" step="0.01" inputmode="decimal">
+          <span class="field__label">Alquiler mensual inicial ($) <span class="req" aria-hidden="true">*</span></span>
+          <input class="field__input field__input--mono" type="number" id="valorInicial" min="0" step="0.01" inputmode="decimal" required>
         </label>
         <label class="field">
-          <span class="field__label">Actualización cada (meses)</span>
-          <input class="field__input field__input--mono" type="number" id="periodicidad" min="1" value="3">
+          <span class="field__label">Actualización cada (meses) <span class="req" aria-hidden="true">*</span></span>
+          <input class="field__input field__input--mono" type="number" id="periodicidad" min="1" value="3" required>
         </label>
         <label class="field">
-          <span class="field__label">Índice de actualización</span>
-          <select class="field__input" id="indice">
-            <option value="ICL">ICL (Banco Central)</option>
-            <option value="IPC">IPC (INDEC)</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field__label">Destino del inmueble</span>
-          <select class="field__input" id="destino">
-            <option value="VIVIENDA">Vivienda</option>
-            <option value="COMERCIAL">Comercial</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field__label">Depósito en garantía ($)</span>
-          <input class="field__input field__input--mono" type="number" id="deposito" min="0" step="0.01" inputmode="decimal" placeholder="Vacío = un mes de alquiler">
-        </label>
-        <label class="field">
-          <span class="field__label">Modelo de contrato</span>
-          <select class="field__input" id="plantilla">
-            <option value="estandar">Estándar UBIKAR (14 cláusulas)</option>
-            <option value="completa">Completo (20 cláusulas)</option>
-          </select>
+          <span class="field__label">Depósito en garantía ($) <span class="opc">(opcional)</span></span>
+          <input class="field__input field__input--mono" type="number" id="deposito" min="0" step="0.01" inputmode="decimal" placeholder="Si lo dejás vacío: un mes de alquiler">
         </label>
       </div>
+      <fieldset class="radios radios--seg" id="indice">
+        <legend class="field__label">Índice de actualización <span class="req" aria-hidden="true">*</span></legend>
+        <div class="radios__opciones"></div>
+      </fieldset>
+      <fieldset class="radios radios--seg" id="destino">
+        <legend class="field__label">Destino de la propiedad <span class="req" aria-hidden="true">*</span></legend>
+        <div class="radios__opciones"></div>
+      </fieldset>
+      <fieldset class="radios radios--lista" id="plantilla">
+        <legend class="field__label">Modelo de contrato <span class="req" aria-hidden="true">*</span></legend>
+        <div class="radios__opciones"></div>
+      </fieldset>
       <p class="derivados" id="derivados" aria-live="polite"></p>
-      <p class="hint" id="plantillaHint" hidden>
-        El modelo completo deja una línea en blanco (__________) en los datos que el sistema no conoce: horario y cuenta bancaria de cobro, marca y color de pintura, y porcentajes de penalidad y sellado. Se completan a mano en Word.
-      </p>
     </section>
 
     <section class="wz-step" data-step="5" hidden>
@@ -136,7 +133,7 @@
       <div class="review" id="review"></div>
     </section>
 
-    <p class="wz-error" id="stepError" role="alert" hidden></p>
+    <div class="wz-error" id="stepError" role="alert" tabindex="-1" hidden></div>
 
     <div class="wz-actions" id="actions">
       <button type="button" class="btn btn--ghost" id="prevBtn" hidden>Anterior</button>
@@ -144,10 +141,21 @@
     </div>
   </form>
 
+  <aside class="ficha" id="ficha" aria-label="Resumen del contrato en curso">
+    <p class="ficha__eyebrow">Ficha del contrato</p>
+    <p class="ficha__monto" id="fichaMonto">—</p>
+    <p class="ficha__cap">alquiler por mes</p>
+    <dl class="ficha__filas" id="fichaFilas"></dl>
+  </aside>
+  </div>
+
   <section class="exito" id="exito" hidden>
     <div class="exito__mark" aria-hidden="true">✓</div>
     <h2 class="wz-step__title" tabindex="-1" id="exitoTitulo">Contrato registrado</h2>
     <p class="wz-step__hint" id="exitoDetalle"></p>
+    <div class="review exito__datos">
+      <dl id="exitoDatos"></dl>
+    </div>
     <div class="exito__actions">
       <a class="btn btn--primary" id="descargarLink" href="#" download>Descargar contrato (.docx)</a>
       <button type="button" class="btn btn--ghost" id="otroBtn">Registrar otro contrato</button>
@@ -163,43 +171,44 @@
     </div>
     <div class="persona__dni">
       <label class="field">
-        <span class="field__label">DNI</span>
-        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+        <span class="field__label">DNI <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
       </label>
       <button type="button" class="btn btn--ghost persona__buscar">Buscar</button>
     </div>
     <p class="persona__estado" role="status"></p>
     <div class="grid2">
       <label class="field">
-        <span class="field__label">Nombre</span>
-        <input class="field__input" data-f="nombre" autocomplete="off">
+        <span class="field__label">Nombre <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" data-f="nombre" autocomplete="off" required>
       </label>
       <label class="field">
-        <span class="field__label">Apellido</span>
-        <input class="field__input" data-f="apellido" autocomplete="off">
+        <span class="field__label">Apellido <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" data-f="apellido" autocomplete="off" required>
       </label>
     </div>
     <label class="field">
-      <span class="field__label">Domicilio (figura en el contrato)</span>
-      <input class="field__input" data-f="domicilio" autocomplete="off">
+      <span class="field__label">Domicilio (figura en el contrato) <span class="req" aria-hidden="true">*</span></span>
+      <input class="field__input" data-f="domicilio" autocomplete="off" required>
     </label>
     <div class="grid2">
       <label class="field">
-        <span class="field__label">Teléfono</span>
+        <span class="field__label">Teléfono <span class="opc">(opcional)</span></span>
         <input class="field__input" data-f="telefono" inputmode="tel" autocomplete="off">
       </label>
       <label class="field">
-        <span class="field__label">Correo electrónico</span>
+        <span class="field__label">Correo electrónico <span class="opc">(opcional)</span></span>
         <input class="field__input" data-f="email" type="email" autocomplete="off">
       </label>
     </div>
     <label class="field persona__detalle" hidden>
-      <span class="field__label">Detalle de la garantía (empleador, CUIT, cargo, legajo, matrícula…)</span>
+      <span class="field__label">Detalle de la garantía (empleador, CUIT, cargo, legajo, matrícula…) <span class="opc">(opcional)</span></span>
       <input class="field__input" data-f="detalle" autocomplete="off">
     </label>
   </fieldset>
 </template>
 
+<script src="ux.js"></script>
 <script src="contrato.js"></script>
 </body>
 </html>

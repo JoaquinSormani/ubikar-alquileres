@@ -15,6 +15,10 @@
   --ok-soft: #e3ede6;
   --warn: #a8583f;
   --warn-soft: #f1ddd2;
+  /* errores: color propio, distinto del terracota de accion */
+  --danger: #8c2a3b;
+  --danger-soft: #f5dfe0;
+  --danger-ink: #5e1a28;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -51,7 +55,10 @@ body {
   border-radius: 2px;
 }
 
-button {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -126,7 +133,13 @@ button {
   padding: 13px 14px;
   font-size: 1rem;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
   transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.field__input::placeholder {
+  color: var(--ink-soft);
+  opacity: 1;
 }
 
 .field__input--mono {
@@ -143,7 +156,7 @@ button {
 .access__error {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--warn);
+  color: var(--danger);
   text-align: left;
 }
 
@@ -202,7 +215,8 @@ button {
 .linklike {
   background: none;
   border: none;
-  padding: 0;
+  padding: 10px 6px;
+  margin: -10px -6px;
   color: var(--accent);
   font-family: var(--font-data);
   font-size: inherit;

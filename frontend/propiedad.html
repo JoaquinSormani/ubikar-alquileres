@@ -18,7 +18,7 @@
     <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
     <div>
       <h1 class="wz__title">Registrar propiedad</h1>
-      <p class="wz__sub">Elegí al propietario y cargá la dirección del inmueble.</p>
+      <p class="wz__sub">Elegí al propietario y cargá la dirección de la propiedad.</p>
     </div>
   </header>
 
@@ -29,6 +29,8 @@
   <ol class="steps" id="steps" aria-label="Progreso"></ol>
 
   <form id="wizard" novalidate>
+
+    <p class="req-nota"><span class="req" aria-hidden="true">*</span> Dato obligatorio</p>
 
     <section class="wz-step" data-step="1" hidden>
       <h2 class="wz-step__title" tabindex="-1">Propietario</h2>
@@ -46,8 +48,8 @@
       </div>
 
       <label class="field">
-        <span class="field__label">Dirección del inmueble</span>
-        <input class="field__input" id="direccionInput" maxlength="200" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off">
+        <span class="field__label">Dirección de la propiedad <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" id="direccionInput" maxlength="200" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off" required>
       </label>
       <p class="hint" id="avisoNuevo" hidden>Este propietario es nuevo: se da de alta junto con la propiedad.</p>
 
@@ -57,7 +59,7 @@
       </div>
     </section>
 
-    <p class="wz-error" id="stepError" role="alert" hidden></p>
+    <div class="wz-error" id="stepError" role="alert" tabindex="-1" hidden></div>
 
     <div class="wz-actions" id="actions">
       <button type="button" class="btn btn--ghost" id="prevBtn" hidden>Anterior</button>
@@ -86,39 +88,40 @@
     </div>
     <div class="persona__dni">
       <label class="field">
-        <span class="field__label">DNI</span>
-        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números">
+        <span class="field__label">DNI <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input field__input--mono" data-f="dni" inputmode="numeric" autocomplete="off" placeholder="Solo números" required>
       </label>
       <button type="button" class="btn btn--ghost persona__buscar">Buscar</button>
     </div>
     <p class="persona__estado" role="status"></p>
     <div class="grid2">
       <label class="field">
-        <span class="field__label">Nombre</span>
-        <input class="field__input" data-f="nombre" autocomplete="off">
+        <span class="field__label">Nombre <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" data-f="nombre" autocomplete="off" required>
       </label>
       <label class="field">
-        <span class="field__label">Apellido</span>
-        <input class="field__input" data-f="apellido" autocomplete="off">
+        <span class="field__label">Apellido <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" data-f="apellido" autocomplete="off" required>
       </label>
     </div>
     <label class="field">
-      <span class="field__label">Domicilio</span>
-      <input class="field__input" data-f="domicilio" autocomplete="off">
+      <span class="field__label">Domicilio <span class="req" aria-hidden="true">*</span></span>
+      <input class="field__input" data-f="domicilio" autocomplete="off" required>
     </label>
     <div class="grid2">
       <label class="field">
-        <span class="field__label">Teléfono</span>
+        <span class="field__label">Teléfono <span class="opc">(opcional)</span></span>
         <input class="field__input" data-f="telefono" inputmode="tel" autocomplete="off">
       </label>
       <label class="field">
-        <span class="field__label">Correo electrónico</span>
+        <span class="field__label">Correo electrónico <span class="opc">(opcional)</span></span>
         <input class="field__input" data-f="email" type="email" autocomplete="off">
       </label>
     </div>
   </fieldset>
 </template>
 
+<script src="ux.js"></script>
 <script src="propiedad.js"></script>
 </body>
 </html>

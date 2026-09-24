@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 
 let paso = 1;
 let propietario;
+let terminado = false;
 
 // ---------- utilidades ----------
 
@@ -53,6 +54,10 @@ function crearPersona() {
       mensaje("Ingresá un DNI de 7 u 8 dígitos.", "");
       return;
     }
+    if (document.body.classList.contains("cargando")) {
+      mensaje("Cargando datos de UBIKAR… probá de nuevo en un instante.", "");
+      return;
+    }
     ultimoBuscado = dni;
     campo("dni").value = dni;
     const propio = catalogo.propietarios.find((p) => p.dni === dni);
@@ -73,11 +78,12 @@ function crearPersona() {
   }
 
   nodo.querySelector(".persona__buscar").addEventListener("click", buscar);
+  // Enter busca el DNI recien escrito; con el DNI ya buscado hace lo mismo que "Siguiente".
   campo("dni").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      buscar();
-    }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (soloDigitos(campo("dni").value) !== ultimoBuscado) buscar();
+    else $("nextBtn").click();
   });
   campo("dni").addEventListener("input", () => {
     if (persona.id !== null || ultimoBuscado) {
@@ -104,13 +110,16 @@ function crearPersona() {
     return d;
   };
 
-  persona.error = () => {
+  persona.errores = () => {
     const d = persona.datos();
-    if (d.dni.length < 7) return "Ingresá un DNI válido para el propietario.";
-    if (!d.nombre || !d.apellido) return "Completá el nombre y el apellido del propietario.";
-    if (!d.domicilio) return "Falta el domicilio del propietario.";
-    if (d.email && !/^\S+@\S+\.\S+$/.test(d.email)) return "El correo electrónico no parece válido.";
-    return "";
+    const e = [];
+    const falta = (nombre, mensaje) => e.push({ campo: campo(nombre), mensaje });
+    if (d.dni.length < 7) falta("dni", "Ingresá un DNI de 7 u 8 dígitos.");
+    if (!d.nombre) falta("nombre", "Falta el nombre.");
+    if (!d.apellido) falta("apellido", "Falta el apellido.");
+    if (!d.domicilio) falta("domicilio", "Falta el domicilio.");
+    if (d.email && !/^\S+@\S+\.\S+$/.test(d.email)) falta("email", "El correo no parece válido. Ejemplo: nombre@correo.com.");
+    return e;
   };
 
   return persona;
@@ -149,16 +158,19 @@ function pintarPaso2() {
 
 // ---------- validacion y armado del pedido ----------
 
-function errorDelPaso(n) {
-  if (n === 1) return propietario.error();
+function erroresDelPaso(n) {
+  if (n === 1) return propietario.errores();
+  const e = [];
   if (n === 2) {
-    const direccion = $("direccionInput").value.trim();
-    if (direccion.length < 5) return "Ingresá la dirección del inmueble (calle, número y, si corresponde, piso o departamento).";
-    if (propiedadesDelPropietario().some((p) => normalizar(p.direccion) === normalizar(direccion))) {
-      return "Este propietario ya tiene una propiedad registrada con esa dirección.";
+    const campoDireccion = $("direccionInput");
+    const direccion = campoDireccion.value.trim();
+    if (direccion.length < 5) {
+      e.push({ campo: campoDireccion, mensaje: "Ingresá la dirección de la propiedad: calle, número y, si corresponde, piso o departamento." });
+    } else if (propiedadesDelPropietario().some((p) => normalizar(p.direccion) === normalizar(direccion))) {
+      e.push({ campo: campoDireccion, mensaje: "Este propietario ya tiene una propiedad registrada con esa dirección." });
     }
   }
-  return "";
+  return e;
 }
 
 function armarSolicitud() {
@@ -188,26 +200,30 @@ function pintarPasos() {
   });
 }
 
-function irAPaso(n) {
+function irAPaso(n, { registrar = true } = {}) {
   paso = n;
   document.querySelectorAll(".wz-step").forEach((s) => {
     s.hidden = Number(s.dataset.step) !== n;
   });
-  $("stepError").hidden = true;
+  UX.limpiar($("stepError"));
   $("prevBtn").hidden = n === 1;
   $("nextBtn").textContent = n === PASOS.length ? "Registrar propiedad" : "Siguiente";
   if (n === 2) pintarPaso2();
   pintarPasos();
+  // Cada paso es una entrada del historial: "Atras" del navegador vuelve al paso anterior.
+  if (registrar) history.pushState({ paso: n }, "", `#paso-${n}`);
   const titulo = document.querySelector(`.wz-step[data-step="${n}"] .wz-step__title`);
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (titulo) titulo.focus({ preventScroll: true });
   if (n === 2) $("direccionInput").focus({ preventScroll: true });
 }
 
+function seccionActual() {
+  return document.querySelector(`.wz-step[data-step="${paso}"]`);
+}
+
 function mostrarError(texto) {
-  const caja = $("stepError");
-  caja.textContent = texto;
-  caja.hidden = false;
+  UX.mostrarGeneral(seccionActual(), $("stepError"), texto);
 }
 
 async function registrar() {
@@ -243,6 +259,7 @@ async function registrar() {
 }
 
 function mostrarExito(respuesta, solicitud, eraNuevo) {
+  terminado = true;
   $("wizard").hidden = true;
   $("steps").hidden = true;
   $("exitoTitulo").textContent = `Propiedad N.º ${respuesta.id} registrada`;
@@ -268,9 +285,9 @@ function mostrarExito(respuesta, solicitud, eraNuevo) {
 }
 
 $("nextBtn").addEventListener("click", () => {
-  const error = errorDelPaso(paso);
-  if (error) {
-    mostrarError(error);
+  const errores = erroresDelPaso(paso);
+  if (errores.length) {
+    UX.mostrar(seccionActual(), $("stepError"), errores);
     return;
   }
   if (paso === PASOS.length) {
@@ -282,18 +299,33 @@ $("nextBtn").addEventListener("click", () => {
 
 $("prevBtn").addEventListener("click", () => irAPaso(paso - 1));
 $("cambiarBtn").addEventListener("click", () => irAPaso(1));
+document.querySelectorAll(".wz-step").forEach((s, i) => {
+  const t = s.querySelector(".wz-step__title");
+  t.before(el("p", "wz-step__eyebrow", `Paso ${i + 1} de ${PASOS.length}`));
+});
 $("wizard").addEventListener("submit", (e) => e.preventDefault());
-$("direccionInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+$("wizard").addEventListener("input", (e) => UX.alEditar(e.target, $("stepError")));
+$("wizard").addEventListener("change", (e) => UX.alEditar(e.target, $("stepError")));
+// Enter en cualquier campo hace lo mismo que el boton principal.
+$("wizard").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.defaultPrevented && e.target.tagName === "INPUT") {
     e.preventDefault();
     $("nextBtn").click();
   }
+});
+window.addEventListener("popstate", (e) => {
+  if (terminado) {
+    window.location.replace(window.location.pathname);
+    return;
+  }
+  if (e.state && e.state.paso) irAPaso(e.state.paso, { registrar: false });
 });
 $("otraBtn").addEventListener("click", () => window.location.reload());
 
 // ---------- arranque ----------
 
 async function cargarCatalogos() {
+  document.body.classList.add("cargando");
   try {
     await Promise.all(Object.keys(catalogo).map(async (clave) => {
       const r = await fetch(`${API}/${clave}`);
@@ -302,10 +334,13 @@ async function cargarCatalogos() {
     }));
   } catch (err) {
     $("offline").hidden = false;
+  } finally {
+    document.body.classList.remove("cargando");
   }
 }
 
 propietario = crearPersona();
 $("propietarioSlot").append(propietario.nodo);
-irAPaso(1);
+history.replaceState({ paso: 1 }, "", "#paso-1");
+irAPaso(1, { registrar: false });
 cargarCatalogos();

@@ -11,6 +11,19 @@ const TIPOS_GARANTIA = [
   ["SEGURO_CAUCION", "Seguro de caución"],
 ];
 const EXIGE_GARANTE = new Set(["FIADOR_SOLIDARIO", "RECIBO_SUELDO"]);
+const DESCRIPCION_GARANTIA = {
+  FIADOR_SOLIDARIO: "Requiere cargar un garante",
+  RECIBO_SUELDO: "Requiere cargar un garante",
+  TITULO_PROPIEDAD: "Se respalda con una propiedad",
+  SEGURO_CAUCION: "Lo respalda una aseguradora",
+};
+const INDICES = [["ICL", "ICL", "Banco Central"], ["IPC", "IPC", "INDEC"]];
+const DESTINOS = [["VIVIENDA", "Vivienda"], ["COMERCIAL", "Comercial"]];
+const MODELOS = [
+  ["estandar", "Estándar UBIKAR", "14 cláusulas"],
+  ["completa", "Completo", "20 cláusulas. Deja líneas en blanco (__________) para completar en Word: horario y cuenta de cobro, pintura, penalidades y sellado."],
+];
+const CLAVE_BORRADOR = "ubikar.borrador.contrato";
 const ESTADOS = [["NUEVO", "Nuevo"], ["BUENO", "Bueno"], ["REGULAR", "Regular"], ["MALO", "Malo"]];
 const PRESETS = {
   Cocina: ["Anafe", "Mesada", "Bajo mesada", "Alacenas", "Grifería"],
@@ -26,6 +39,9 @@ const dinero = new Intl.NumberFormat("es-AR", { style: "currency", currency: "AR
 
 let paso = 1;
 let propietario;
+let sucio = false;
+let terminado = false;
+let restaurando = false;
 const inquilinos = [];
 const garantes = [];
 
@@ -70,9 +86,36 @@ function opciones(select, lista) {
   lista.forEach(([valor, texto]) => select.append(new Option(texto, valor)));
 }
 
+function renderRadios(idContenedor, nombre, lista, defecto) {
+  const contenedor = $(idContenedor).querySelector(".radios__opciones");
+  lista.forEach(([valor, texto, descripcion]) => {
+    const etiqueta = el("label", "radio");
+    const input = el("input");
+    input.type = "radio";
+    input.name = nombre;
+    input.value = valor;
+    input.checked = valor === defecto;
+    const cuerpo = el("span", "radio__cuerpo");
+    cuerpo.append(el("span", "radio__texto", texto));
+    if (descripcion) cuerpo.append(el("span", "radio__desc", descripcion));
+    etiqueta.append(input, cuerpo);
+    contenedor.append(etiqueta);
+  });
+}
+
+function valorRadio(nombre) {
+  const marcado = document.querySelector(`input[name="${nombre}"]:checked`);
+  return marcado ? marcado.value : "";
+}
+
+function fijarRadio(nombre, valor) {
+  const radio = document.querySelector(`input[name="${nombre}"][value="${valor}"]`);
+  if (radio) radio.checked = true;
+}
+
 // ---------- persona (bloque reutilizable) ----------
 
-function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, onQuitar, onBuscar }) {
+function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, soloLectura = false, onQuitar, onBuscar }) {
   const nodo = $("tplPersona").content.firstElementChild.cloneNode(true);
   const campo = (nombre) => nodo.querySelector(`[data-f="${nombre}"]`);
   const estado = nodo.querySelector(".persona__estado");
@@ -80,6 +123,37 @@ function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, onQu
   let ultimoBuscado = "";
 
   nodo.querySelector(".persona__title").textContent = titulo;
+  let tarjeta = null;
+  if (soloLectura) {
+    nodo.classList.add("persona--lectura");
+    nodo.querySelectorAll("[data-f]").forEach((i) => {
+      if (i.dataset.f !== "dni") i.readOnly = true;
+    });
+    tarjeta = el("div", "pcard");
+    tarjeta.hidden = true;
+    estado.after(tarjeta);
+  }
+
+  function pintarTarjeta(p) {
+    tarjeta.innerHTML = "";
+    if (!p) {
+      tarjeta.hidden = true;
+      return;
+    }
+    const iniciales = `${(p.nombre || "?")[0]}${(p.apellido || "")[0] || ""}`.toUpperCase();
+    const cabecera = el("div", "pcard__head");
+    const nombres = el("div", "pcard__id");
+    nombres.append(el("p", "pcard__nombre", `${p.nombre} ${p.apellido}`), el("p", "pcard__dni", `DNI ${p.dni}`));
+    cabecera.append(el("span", "pcard__avatar", iniciales), nombres);
+    const datos = el("dl", "pcard__datos");
+    [["Domicilio", p.domicilio], ["Teléfono", p.telefono], ["Correo electrónico", p.email]].forEach(([clave, valor]) => {
+      const fila = el("div", "pcard__dato");
+      fila.append(el("dt", "", clave), el("dd", valor ? "" : "pcard__vacio", valor || "No informado"));
+      datos.append(fila);
+    });
+    tarjeta.append(cabecera, datos);
+    tarjeta.hidden = false;
+  }
   if (conDetalle) nodo.querySelector(".persona__detalle").hidden = false;
   if (quitable) {
     const quitar = nodo.querySelector(".persona__remove");
@@ -105,10 +179,21 @@ function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, onQu
       mensaje("Ingresá un DNI de 7 u 8 dígitos.", "");
       return;
     }
+    if (document.body.classList.contains("cargando")) {
+      mensaje("Cargando datos de UBIKAR… probá de nuevo en un instante.", "");
+      return;
+    }
     ultimoBuscado = dni;
     campo("dni").value = dni;
     const propio = catalogo[tipo].find((p) => p.dni === dni);
-    if (propio) {
+    if (soloLectura) {
+      persona.id = propio ? propio.id : null;
+      llenar(propio || {});
+      pintarTarjeta(propio);
+      mensaje(propio
+        ? "Propietario registrado en UBIKAR."
+        : "No hay un propietario registrado con ese DNI. Registralo primero desde «Registrar propiedad».", propio ? "ok" : "error");
+    } else if (propio) {
       persona.id = propio.id;
       llenar(propio);
       mensaje("Ya registrado en UBIKAR. Si corregís algún dato, se actualiza al guardar el contrato.", "ok");
@@ -127,16 +212,18 @@ function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, onQu
   }
 
   nodo.querySelector(".persona__buscar").addEventListener("click", buscar);
+  // Enter busca el DNI recien escrito; con el DNI ya buscado hace lo mismo que "Siguiente".
   campo("dni").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      buscar();
-    }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (soloDigitos(campo("dni").value) !== ultimoBuscado) buscar();
+    else $("nextBtn").click();
   });
   campo("dni").addEventListener("input", () => {
     if (persona.id !== null || ultimoBuscado) {
       persona.id = null;
       ultimoBuscado = "";
+      if (tarjeta) pintarTarjeta(null);
       mensaje("", "");
       if (onBuscar) onBuscar(persona);
     }
@@ -160,12 +247,37 @@ function crearPersona({ titulo, tipo, conDetalle = false, quitable = false, onQu
     return d;
   };
 
-  persona.error = () => {
+  persona.errores = () => {
+    const dni = campo("dni");
+    if (soloLectura) {
+      return persona.id === null
+        ? [{ campo: dni, contexto: persona.titulo, mensaje: `Buscá por DNI a un ${titulo.toLowerCase()} ya registrado.` }]
+        : [];
+    }
     const d = persona.datos();
-    if (d.dni.length < 7) return `Ingresá un DNI válido para: ${titulo}.`;
-    if (!d.nombre || !d.apellido) return `Completá nombre y apellido de: ${titulo}.`;
-    if (!d.domicilio) return `Falta el domicilio de: ${titulo} (figura en el contrato).`;
-    return "";
+    const e = [];
+    const falta = (campoNombre, mensaje) => e.push({ campo: campo(campoNombre), contexto: persona.titulo, mensaje });
+    if (d.dni.length < 7) falta("dni", "Ingresá un DNI de 7 u 8 dígitos.");
+    if (!d.nombre) falta("nombre", "Falta el nombre.");
+    if (!d.apellido) falta("apellido", "Falta el apellido.");
+    if (!d.domicilio) falta("domicilio", "Falta el domicilio (figura en el contrato).");
+    return e;
+  };
+
+  persona.campoDni = campo("dni");
+
+  persona.poner = (dni) => {
+    campo("dni").value = dni;
+    buscar();
+  };
+
+  persona.cargar = (d) => {
+    campo("dni").value = d.dni || "";
+    llenar(d);
+    persona.id = d.id === undefined ? null : d.id;
+    ultimoBuscado = soloDigitos(d.dni || "");
+    if (persona.id !== null) mensaje("Ya registrado en UBIKAR. Si corregís algún dato, se actualiza al guardar el contrato.", "ok");
+    else if (ultimoBuscado) mensaje("DNI nuevo: se da de alta junto con este contrato.", "new");
   };
 
   return persona;
@@ -177,20 +289,16 @@ function cargarPropiedades(p) {
   const select = $("propiedadSelect");
   select.innerHTML = "";
   const propias = p && p.id !== null ? catalogo.propiedades.filter((x) => x.idPropietario === p.id) : [];
-  select.append(new Option("Nueva propiedad", ""));
   propias.forEach((x) => select.append(new Option(x.direccion, x.id)));
   $("propiedadSelectField").hidden = propias.length === 0;
-  alternarDireccion();
-}
-
-function alternarDireccion() {
-  $("direccionField").hidden = $("propiedadSelect").value !== "";
+  if (typeof pintarFicha === "function" && inquilinos) pintarFicha();
+  const sinPropiedades = p && p.id !== null && propias.length === 0;
+  $("sinPropiedades").hidden = !sinPropiedades;
 }
 
 function iniciarPropietario() {
-  propietario = crearPersona({ titulo: "Propietario", tipo: "propietarios", onBuscar: cargarPropiedades });
+  propietario = crearPersona({ titulo: "Propietario", tipo: "propietarios", soloLectura: true, onBuscar: cargarPropiedades });
   $("propietarioSlot").append(propietario.nodo);
-  $("propiedadSelect").addEventListener("change", alternarDireccion);
   cargarPropiedades(null);
 }
 
@@ -223,7 +331,7 @@ const CONFIG_INQUILINO = { titulo: "Inquilino", prefijo: "Inquilino", tipo: "inq
 const CONFIG_GARANTE = { titulo: "Garante", prefijo: "Garante", tipo: "garantes", conDetalle: true };
 
 function tipoGarantiaExigeGarante() {
-  return EXIGE_GARANTE.has($("tipoGarantia").value);
+  return EXIGE_GARANTE.has(valorRadio("tipoGarantia"));
 }
 
 function actualizarGarantes() {
@@ -272,7 +380,12 @@ function agregarRenglon(valores = {}) {
   borrar.type = "button";
   borrar.setAttribute("aria-label", "Quitar elemento");
   borrar.addEventListener("click", () => fila.remove());
-  fila.append(ambiente, objeto, estado, obs, borrar);
+  const celda = (texto, control) => {
+    const c = el("label", "inv__cell");
+    c.append(el("span", "inv__lbl", texto), control);
+    return c;
+  };
+  fila.append(celda("Ambiente", ambiente), celda("Elemento", objeto), celda("Estado", estado), celda("Observaciones", obs), borrar);
   fila.datos = () => ({
     ambiente: ambiente.value.trim(),
     objeto: objeto.value.trim(),
@@ -313,56 +426,69 @@ function vaciarRenglonesEnBlanco() {
 
 // ---------- validación, armado y revisión ----------
 
-function errorDelPaso(n) {
+function erroresDelPaso(n) {
+  const e = [];
+  const dniPropietario = propietario.datos().dni;
   if (n === 1) {
-    const e = propietario.error();
-    if (e) return e;
-    if ($("propiedadSelect").value === "" && !$("direccionInput").value.trim()) return "Ingresá la dirección de la propiedad.";
+    e.push(...propietario.errores());
+    if (propietario.id !== null && $("propiedadSelect").value === "") {
+      e.push($("propiedadSelectField").hidden
+        ? { campo: null, mensaje: "Este propietario todavía no tiene propiedades. Registrala primero desde «Registrar propiedad»." }
+        : { campo: $("propiedadSelect"), mensaje: "Elegí la propiedad del contrato." });
+    }
   }
   if (n === 2) {
-    for (const p of inquilinos) {
-      const e = p.error();
-      if (e) return e;
-      if (p.datos().dni === propietario.datos().dni) return "El propietario no puede ser inquilino de su propia propiedad.";
-    }
+    inquilinos.forEach((p) => {
+      e.push(...p.errores());
+      if (p.datos().dni.length >= 7 && p.datos().dni === dniPropietario) {
+        e.push({ campo: p.campoDni, contexto: p.titulo, mensaje: "El propietario no puede ser inquilino de su propia propiedad." });
+      }
+    });
   }
   if (n === 3 && tipoGarantiaExigeGarante()) {
-    for (const g of garantes) {
-      const e = g.error();
-      if (e) return e;
-      if (inquilinos.some((i) => i.datos().dni === g.datos().dni)) return "Un garante no puede ser también inquilino del mismo contrato.";
-    }
+    garantes.forEach((g) => {
+      e.push(...g.errores());
+      if (g.datos().dni.length >= 7 && inquilinos.some((i) => i.datos().dni === g.datos().dni)) {
+        e.push({ campo: g.campoDni, contexto: g.titulo, mensaje: "Un garante no puede ser también inquilino del mismo contrato." });
+      }
+    });
   }
   if (n === 4) {
     const duracion = Number($("duracionMeses").value);
     const periodicidad = Number($("periodicidad").value);
-    if (!$("fechaInicio").value) return "Elegí la fecha de inicio.";
-    if (!(duracion >= 1)) return "La duración debe ser de al menos 1 mes.";
-    if (!(Number($("valorInicial").value) > 0)) return "Ingresá el alquiler mensual inicial.";
-    if (!(periodicidad >= 1 && periodicidad <= duracion)) return "La actualización debe ser cada 1 mes como mínimo y no superar la duración.";
+    if (!$("fechaInicio").value) e.push({ campo: $("fechaInicio"), mensaje: "Elegí la fecha de inicio." });
+    if (!(duracion >= 1)) e.push({ campo: $("duracionMeses"), mensaje: "La duración debe ser de al menos 1 mes." });
+    if (!(Number($("valorInicial").value) > 0)) e.push({ campo: $("valorInicial"), mensaje: "Ingresá el alquiler mensual inicial." });
+    if (!(periodicidad >= 1 && periodicidad <= duracion)) {
+      e.push({ campo: $("periodicidad"), mensaje: "Tiene que ser de 1 mes como mínimo y no superar la duración." });
+    }
   }
-  if (n === 5 && renglones().length === 0) return "Cargá al menos un elemento del inventario (podés usar los ambientes de arriba).";
-  return "";
+  if (n === 5 && renglones().length === 0) {
+    e.push({
+      campo: $("invSlot").querySelector('.inv__row input[aria-label="Elemento"]'),
+      mensaje: "Cargá al menos un elemento del inventario (podés usar los ambientes de arriba).",
+    });
+  }
+  return e;
 }
 
 function armarSolicitud() {
-  const propiedadId = $("propiedadSelect").value;
   const deposito = $("deposito").value;
   return {
     propietario: propietario.datos(),
-    propiedad: propiedadId ? { id: Number(propiedadId) } : { direccion: $("direccionInput").value.trim() },
+    propiedad: { id: Number($("propiedadSelect").value) },
     inquilinos: inquilinos.map((p) => p.datos()),
     garantes: tipoGarantiaExigeGarante() ? garantes.map((p) => p.datos()) : [],
     fechaInicio: $("fechaInicio").value,
     duracionMeses: Number($("duracionMeses").value),
     valorInicial: Number($("valorInicial").value),
     periodicidadActualizacion: Number($("periodicidad").value),
-    indiceActualizacion: $("indice").value,
-    destino: $("destino").value,
+    indiceActualizacion: valorRadio("indice"),
+    destino: valorRadio("destino"),
     depositoGarantia: deposito === "" ? null : Number(deposito),
-    tipoGarantia: $("tipoGarantia").value,
+    tipoGarantia: valorRadio("tipoGarantia"),
     renglones: renglones(),
-    plantilla: $("plantilla").value,
+    plantilla: valorRadio("plantilla"),
   };
 }
 
@@ -391,10 +517,22 @@ function renderRevision() {
   const tipo = TIPOS_GARANTIA.find(([v]) => v === s.tipoGarantia)[1];
   const review = $("review");
   review.innerHTML = "";
+  const cifra = (num, cap, extra = "") => {
+    const c = el("div", "review__cifra");
+    c.append(el("span", `review__num${extra}`, num), el("span", "review__cap", cap));
+    return c;
+  };
+  const cifras = el("div", "review__cifras");
+  cifras.append(
+    cifra(dinero.format(s.valorInicial), "por mes"),
+    cifra(`${textoFechaISO(s.fechaInicio)} al ${fin}`, `${s.duracionMeses} meses de contrato`, " review__num--txt"),
+  );
+  const hero = el("div", "review__hero");
+  hero.append(el("p", "review__prop", $("propiedadSelect").selectedOptions[0].textContent), cifras);
   review.append(
+    hero,
     bloqueRevision("Partes", [
       ["Propietario", resumenPersona(s.propietario)],
-      ["Propiedad", s.propiedad.id ? $("propiedadSelect").selectedOptions[0].textContent : s.propiedad.direccion],
       ...s.inquilinos.map((i, n) => [s.inquilinos.length > 1 ? `Inquilino ${n + 1}` : "Inquilino", resumenPersona(i)]),
     ]),
     bloqueRevision("Garantía", [
@@ -402,8 +540,6 @@ function renderRevision() {
       ...s.garantes.map((g, n) => [s.garantes.length > 1 ? `Garante ${n + 1}` : "Garante", resumenPersona(g) + (g.detalle ? ` (${g.detalle})` : "")]),
     ]),
     bloqueRevision("Condiciones", [
-      ["Vigencia", `${textoFechaISO(s.fechaInicio)} al ${fin} (${s.duracionMeses} meses)`],
-      ["Alquiler inicial", dinero.format(s.valorInicial)],
       ["Actualización", `Cada ${s.periodicidadActualizacion} meses por ${s.indiceActualizacion}`],
       ["Depósito", dinero.format(deposito)],
       ["Destino", s.destino === "VIVIENDA" ? "Vivienda" : "Comercial"],
@@ -411,6 +547,35 @@ function renderRevision() {
     ]),
     bloqueRevision("Inventario", [["Elementos", `${s.renglones.length} cargados en ${new Set(s.renglones.map((r) => r.ambiente || "General")).size} ambiente(s)`]]),
   );
+}
+
+// ---------- ficha lateral ----------
+
+function pintarFicha() {
+  const p = propietario.datos();
+  const select = $("propiedadSelect");
+  const inquilinosCargados = inquilinos
+    .map((x) => x.datos())
+    .filter((d) => d.nombre || d.apellido)
+    .map((d) => `${d.nombre} ${d.apellido}`.trim());
+  const inicio = $("fechaInicio").value;
+  const duracion = Number($("duracionMeses").value);
+  const valor = Number($("valorInicial").value);
+  $("fichaMonto").textContent = valor > 0 ? dinero.format(valor) : "—";
+  $("fichaMonto").classList.toggle("ficha__monto--vacio", !(valor > 0));
+  const filas = [
+    ["Propiedad", select.value ? select.selectedOptions[0].textContent : ""],
+    ["Propietario", propietario.id !== null ? `${p.nombre} ${p.apellido}` : ""],
+    ["Inquilinos", inquilinosCargados.join(", ")],
+    ["Vigencia", inicio && duracion >= 1 ? `${textoFechaISO(inicio)} al ${textoFecha(fechaFin(inicio, duracion))}` : ""],
+  ];
+  const dl = $("fichaFilas");
+  dl.innerHTML = "";
+  filas.forEach(([clave, valorFila]) => {
+    const fila = el("div", "ficha__fila");
+    fila.append(el("dt", "", clave), el("dd", valorFila ? "" : "ficha__vacio", valorFila || "Pendiente"));
+    dl.append(fila);
+  });
 }
 
 // ---------- navegación ----------
@@ -433,45 +598,53 @@ function pintarPasos() {
   });
 }
 
-function irAPaso(n) {
+function irAPaso(n, { registrar = true } = {}) {
   paso = n;
   document.querySelectorAll(".wz-step").forEach((s) => {
     s.hidden = Number(s.dataset.step) !== n;
   });
-  $("stepError").hidden = true;
+  UX.limpiar($("stepError"));
   $("prevBtn").hidden = n === 1;
   $("nextBtn").textContent = n === PASOS.length ? "Generar contrato" : "Siguiente";
   if (n === 3) actualizarGarantes();
   if (n === 4) actualizarDerivados();
   if (n === PASOS.length) renderRevision();
+  pintarFicha();
   pintarPasos();
+  // Cada paso es una entrada del historial: "Atras" del navegador vuelve al paso anterior.
+  if (registrar) history.pushState({ paso: n }, "", `#paso-${n}`);
+  programarGuardado();
   const titulo = document.querySelector(`.wz-step[data-step="${n}"] .wz-step__title`);
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (titulo) titulo.focus({ preventScroll: true });
 }
 
+function seccionActual() {
+  return document.querySelector(`.wz-step[data-step="${paso}"]`);
+}
+
 function mostrarError(texto) {
-  const caja = $("stepError");
-  caja.textContent = texto;
-  caja.hidden = false;
+  UX.mostrarGeneral(seccionActual(), $("stepError"), texto);
 }
 
 async function generar() {
   const boton = $("nextBtn");
+  const solicitud = armarSolicitud();
+  const propiedadTexto = $("propiedadSelect").selectedOptions[0].textContent;
   boton.disabled = true;
   boton.textContent = "Generando…";
   try {
     const respuesta = await fetch(`${API}/contratos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(armarSolicitud()),
+      body: JSON.stringify(solicitud),
     });
     const cuerpo = await respuesta.json().catch(() => ({}));
     if (!respuesta.ok) {
       mostrarError(cuerpo.error || "El servidor no pudo registrar el contrato. Revisá los datos e intentá de nuevo.");
       return;
     }
-    mostrarExito(cuerpo);
+    mostrarExito(cuerpo, solicitud, propiedadTexto);
   } catch (err) {
     mostrarError("No pudimos conectar con el servidor. ¿Está corriendo el backend en localhost:8081?");
   } finally {
@@ -480,23 +653,160 @@ async function generar() {
   }
 }
 
-function mostrarExito(contrato) {
-  $("wizard").hidden = true;
+function mostrarExito(contrato, solicitud, propiedadTexto) {
+  terminado = true;
+  sucio = false;
+  try {
+    sessionStorage.removeItem(CLAVE_BORRADOR);
+  } catch (err) {
+    /* sin almacenamiento: no hay borrador que borrar */
+  }
+  $("cols").hidden = true;
   $("steps").hidden = true;
+  $("borrador").hidden = true;
   $("exitoTitulo").textContent = `Contrato N.º ${contrato.id} registrado`;
   $("exitoDetalle").textContent =
-    `Vigente del ${textoFechaISO(contrato.fechaInicio)} al ${textoFechaISO(contrato.fechaFin)}. ` +
-    "Se guardó el contrato, el inventario y el documento en Word.";
+    "Se guardó el contrato, el inventario y el documento en Word. Descargá el Word para imprimirlo y firmarlo.";
+  const modelo = MODELOS.find(([v]) => v === solicitud.plantilla);
+  const filas = [
+    ["Propiedad", propiedadTexto],
+    ["Propietario", `${solicitud.propietario.nombre} ${solicitud.propietario.apellido}`],
+    ["Inquilinos", solicitud.inquilinos.map((i) => `${i.nombre} ${i.apellido}`).join(", ")],
+    ["Alquiler mensual", dinero.format(solicitud.valorInicial)],
+    ["Vigencia", `${textoFechaISO(contrato.fechaInicio)} al ${textoFechaISO(contrato.fechaFin)}`],
+    ["Modelo de contrato", modelo ? modelo[1] : solicitud.plantilla],
+  ];
+  const dl = $("exitoDatos");
+  dl.innerHTML = "";
+  filas.forEach(([clave, valor]) => {
+    const fila = el("div", "review__row");
+    fila.append(el("dt", "", clave), el("dd", "", valor));
+    dl.append(fila);
+  });
   $("descargarLink").href = `${API_BASE}${contrato.documento}`;
   $("exito").hidden = false;
   $("exitoTitulo").focus();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// ---------- borrador: no perder lo cargado si se recarga o se toca "Atras" ----------
+// Se guarda en sessionStorage (solo esta pestaña, se borra al cerrarla): son datos personales.
+
+function estadoActual() {
+  return {
+    paso,
+    propietarioDni: soloDigitos(propietario.campoDni.value),
+    propiedadId: $("propiedadSelect").value,
+    inquilinos: inquilinos.map((p) => p.datos()),
+    garantes: garantes.map((p) => p.datos()),
+    tipoGarantia: valorRadio("tipoGarantia"),
+    fechaInicio: $("fechaInicio").value,
+    duracionMeses: $("duracionMeses").value,
+    valorInicial: $("valorInicial").value,
+    periodicidad: $("periodicidad").value,
+    deposito: $("deposito").value,
+    indice: valorRadio("indice"),
+    destino: valorRadio("destino"),
+    plantilla: valorRadio("plantilla"),
+    renglones: [...$("invSlot").querySelectorAll(".inv__row")].map((f) => f.datos()),
+  };
+}
+
+function guardarBorrador() {
+  if (!sucio || terminado || restaurando) return;
+  try {
+    sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify(estadoActual()));
+  } catch (err) {
+    /* sin almacenamiento: se sigue sin borrador */
+  }
+}
+
+let temporizadorBorrador;
+function programarGuardado() {
+  clearTimeout(temporizadorBorrador);
+  temporizadorBorrador = setTimeout(guardarBorrador, 300);
+}
+
+function ajustarPersonas(lista, slot, config, cantidad) {
+  while (lista.length < cantidad) agregarPersona(lista, slot, config);
+}
+
+function restaurarBorrador() {
+  let d = null;
+  try {
+    d = JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR));
+  } catch (err) {
+    d = null;
+  }
+  if (!d) return;
+  restaurando = true;
+  if (d.propietarioDni) propietario.poner(d.propietarioDni);
+  if (d.propiedadId && $("propiedadSelect").querySelector(`option[value="${d.propiedadId}"]`)) {
+    $("propiedadSelect").value = d.propiedadId;
+  }
+  ajustarPersonas(inquilinos, $("inquilinosSlot"), CONFIG_INQUILINO, d.inquilinos.length);
+  d.inquilinos.forEach((x, i) => inquilinos[i].cargar(x));
+  ajustarPersonas(garantes, $("garantesSlot"), CONFIG_GARANTE, d.garantes.length);
+  d.garantes.forEach((x, i) => garantes[i].cargar(x));
+  fijarRadio("tipoGarantia", d.tipoGarantia);
+  fijarRadio("indice", d.indice);
+  fijarRadio("destino", d.destino);
+  fijarRadio("plantilla", d.plantilla);
+  $("fechaInicio").value = d.fechaInicio || "";
+  $("duracionMeses").value = d.duracionMeses;
+  $("valorInicial").value = d.valorInicial;
+  $("periodicidad").value = d.periodicidad;
+  $("deposito").value = d.deposito;
+  $("invSlot").querySelectorAll(".inv__row").forEach((f) => f.remove());
+  d.renglones.forEach((r) => agregarRenglon(r));
+  if (!d.renglones.length) agregarRenglon();
+  actualizarGarantes();
+  actualizarDerivados();
+  restaurando = false;
+  sucio = true;
+  const destino = Math.min(Math.max(d.paso || 1, 1), PASOS.length - 1);
+  history.replaceState({ paso: destino }, "", `#paso-${destino}`);
+  irAPaso(destino, { registrar: false });
+  $("borrador").hidden = false;
+}
+
+function iniciarBorrador() {
+  const texto = "Recuperamos lo que estabas cargando.";
+  $("descartarBtn").addEventListener("click", () => {
+    $("descartarBtn").hidden = true;
+    $("confirmarBloque").hidden = false;
+    $("borradorTexto").textContent = "¿Descartar todo lo que cargaste? No se puede deshacer.";
+    $("confirmarNo").focus();
+  });
+  $("confirmarNo").addEventListener("click", () => {
+    $("confirmarBloque").hidden = true;
+    $("descartarBtn").hidden = false;
+    $("borradorTexto").textContent = texto;
+    $("descartarBtn").focus();
+  });
+  $("confirmarSi").addEventListener("click", () => {
+    sucio = false;
+    try {
+      sessionStorage.removeItem(CLAVE_BORRADOR);
+    } catch (err) {
+      /* nada que borrar */
+    }
+    history.replaceState({ paso: 1 }, "", "#paso-1");
+    window.location.reload();
+  });
+}
+
+// ---------- eventos ----------
+
+function marcarCambio() {
+  sucio = true;
+  programarGuardado();
+}
+
 $("nextBtn").addEventListener("click", () => {
-  const error = errorDelPaso(paso);
-  if (error) {
-    mostrarError(error);
+  const errores = erroresDelPaso(paso);
+  if (errores.length) {
+    UX.mostrar(seccionActual(), $("stepError"), errores);
     return;
   }
   if (paso === PASOS.length) {
@@ -507,20 +817,55 @@ $("nextBtn").addEventListener("click", () => {
 });
 
 $("prevBtn").addEventListener("click", () => irAPaso(paso - 1));
+$("wizard").addEventListener("input", (e) => {
+  UX.alEditar(e.target, $("stepError"));
+  pintarFicha();
+  marcarCambio();
+});
+$("wizard").addEventListener("change", (e) => {
+  UX.alEditar(e.target, $("stepError"));
+  pintarFicha();
+  marcarCambio();
+});
+$("wizard").addEventListener("click", programarGuardado);
+// Enter en cualquier campo hace lo mismo que el boton principal.
+$("wizard").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.defaultPrevented && e.target.tagName === "INPUT") {
+    e.preventDefault();
+    $("nextBtn").click();
+  }
+});
 $("wizard").addEventListener("submit", (e) => e.preventDefault());
+
+window.addEventListener("popstate", (e) => {
+  if (terminado) {
+    window.location.replace(window.location.pathname);
+    return;
+  }
+  if (e.state && e.state.paso) irAPaso(e.state.paso, { registrar: false });
+});
+window.addEventListener("beforeunload", (e) => {
+  if (sucio && !terminado) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+document.querySelectorAll(".wz-step").forEach((s, i) => {
+  const t = s.querySelector(".wz-step__title");
+  t.before(el("p", "wz-step__eyebrow", `Paso ${i + 1} de ${PASOS.length}`));
+});
 $("otroBtn").addEventListener("click", () => window.location.reload());
 $("addInquilinoBtn").addEventListener("click", () => agregarPersona(inquilinos, $("inquilinosSlot"), CONFIG_INQUILINO));
 $("addGaranteBtn").addEventListener("click", () => agregarPersona(garantes, $("garantesSlot"), CONFIG_GARANTE));
 $("addRenglonBtn").addEventListener("click", () => agregarRenglon());
 $("tipoGarantia").addEventListener("change", actualizarGarantes);
-$("plantilla").addEventListener("change", () => {
-  $("plantillaHint").hidden = $("plantilla").value !== "completa";
-});
 ["fechaInicio", "duracionMeses", "valorInicial", "deposito"].forEach((id) => $(id).addEventListener("input", actualizarDerivados));
 
 // ---------- arranque ----------
 
 async function cargarCatalogos() {
+  document.body.classList.add("cargando");
   const rutas = { propietarios: "propietarios", inquilinos: "inquilinos", garantes: "garantes", propiedades: "propiedades" };
   try {
     await Promise.all(Object.entries(rutas).map(async ([clave, ruta]) => {
@@ -528,14 +873,25 @@ async function cargarCatalogos() {
       if (!r.ok) throw new Error(ruta);
       catalogo[clave] = await r.json();
     }));
+    return true;
   } catch (err) {
     $("offline").hidden = false;
+    return false;
+  } finally {
+    document.body.classList.remove("cargando");
   }
 }
 
-opciones($("tipoGarantia"), TIPOS_GARANTIA);
+renderRadios("tipoGarantia", "tipoGarantia", TIPOS_GARANTIA.map(([v, t]) => [v, t, DESCRIPCION_GARANTIA[v]]), "FIADOR_SOLIDARIO");
+renderRadios("indice", "indice", INDICES, "ICL");
+renderRadios("destino", "destino", DESTINOS, "VIVIENDA");
+renderRadios("plantilla", "plantilla", MODELOS, "estandar");
 iniciarPropietario();
 agregarPersona(inquilinos, $("inquilinosSlot"), CONFIG_INQUILINO);
 iniciarInventario();
-irAPaso(1);
-cargarCatalogos();
+iniciarBorrador();
+history.replaceState({ paso: 1 }, "", "#paso-1");
+irAPaso(1, { registrar: false });
+cargarCatalogos().then((cargado) => {
+  if (cargado) restaurarBorrador();
+});
