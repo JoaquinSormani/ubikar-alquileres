@@ -1,0 +1,290 @@
+/*
+ * Capa "vidrio" (estilo iOS): fondo con manchas de la paleta difuminadas y superficies
+ * translucidas con backdrop-filter. Solo cambia superficies, sombras y formas: la paleta
+ * y las tipografias son las de portal.css. Para volver al estilo plano, quitar el <link>.
+ *
+ * Contraste: las manchas tiñen como maximo ~40 % y el vidrio tiene 74 % de opacidad, asi que
+ * el texto secundario se mantiene sobre 4,5:1 incluso bajo el centro de una mancha.
+ */
+
+:root {
+  --vidrio: rgba(255, 252, 249, 0.74);
+  --vidrio-suave: rgba(255, 252, 249, 0.52);
+  --vidrio-campo: rgba(255, 253, 251, 0.82);
+  --vidrio-borde: rgba(255, 255, 255, 0.78);
+  --vidrio-sombra: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 14px 34px -16px rgba(63, 21, 33, 0.32),
+    0 2px 8px rgba(63, 21, 33, 0.06);
+  --desenfoque: blur(24px) saturate(150%);
+  --linea: rgba(64, 49, 47, 0.13);
+  /* terracota un poco mas profundo para texto chico sobre vidrio (contraste) */
+  --accent-texto: #96492f;
+}
+
+/* ---------- Fondo: manchas de la paleta, difuminadas ---------- */
+
+body {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background: #f0e3d8;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -12%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(36% 40% at 10% 6%, rgba(168, 88, 63, 0.42), transparent 72%),
+    radial-gradient(30% 38% at 92% 10%, rgba(46, 65, 87, 0.32), transparent 72%),
+    radial-gradient(38% 44% at 84% 94%, rgba(63, 21, 33, 0.3), transparent 72%),
+    radial-gradient(34% 40% at 6% 92%, rgba(168, 88, 63, 0.26), transparent 72%),
+    linear-gradient(160deg, #f8f1ea 0%, #f0e3d8 55%, #ead9cc 100%);
+  filter: blur(28px);
+}
+
+/* ---------- Superficies principales: vidrio ---------- */
+
+.wz-step,
+.exito,
+.ficha,
+.steps,
+.status,
+.modal,
+.role-choice__option,
+.access__form {
+  background: var(--vidrio);
+  -webkit-backdrop-filter: var(--desenfoque);
+  backdrop-filter: var(--desenfoque);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: var(--vidrio-sombra);
+  border-radius: 24px;
+}
+
+.wz-step,
+.exito {
+  padding: 30px;
+}
+
+.steps {
+  padding: 8px 18px 6px;
+  margin-bottom: 20px;
+  border-radius: 20px;
+}
+
+.ficha {
+  box-shadow: inset 0 3px 0 var(--accent), var(--vidrio-sombra);
+  border-top: 1px solid var(--vidrio-borde);
+}
+
+.access__form {
+  padding: 28px 24px;
+  max-width: 360px;
+}
+
+.modal-layer {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Textos que quedan directamente sobre el fondo (no sobre vidrio): tinta plena */
+.wz__sub,
+.req-nota,
+.access__hint,
+.access__demo,
+.portal__role,
+.history__heading,
+.demo-note {
+  color: var(--ink);
+}
+
+.linklike {
+  color: var(--accent-texto);
+}
+
+/* historial de recibos: sobre vidrio en lugar de directamente sobre el fondo */
+.ledger {
+  padding: 2px 16px;
+  background: var(--vidrio);
+  -webkit-backdrop-filter: var(--desenfoque);
+  backdrop-filter: var(--desenfoque);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 20px;
+  box-shadow: var(--vidrio-sombra);
+}
+
+.ledger__row:last-child {
+  border-bottom: 0;
+}
+
+.req,
+.wz-step__eyebrow {
+  color: var(--accent-texto);
+}
+
+/* ---------- Superficies internas: vidrio mas suave ---------- */
+
+.persona {
+  background: var(--vidrio-suave);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.pcard {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px -12px rgba(63, 21, 33, 0.3);
+}
+
+.pcard__head,
+.review__row,
+.ficha__filas,
+.ficha__fila,
+.existentes__lista,
+.existentes__item,
+.ledger,
+.ledger__row {
+  border-color: var(--linea);
+}
+
+.resumen,
+.derivados,
+.borrador,
+.review__hero {
+  background: rgba(168, 88, 63, 0.13);
+  border: 1px solid rgba(168, 88, 63, 0.2);
+  border-radius: 16px;
+}
+
+.wz-error {
+  background: rgba(245, 223, 224, 0.92);
+  border-radius: 14px;
+}
+
+/* ---------- Campos y opciones ---------- */
+
+.field__input {
+  background: var(--vidrio-campo);
+  border: 1.5px solid rgba(64, 49, 47, 0.24);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 2px rgba(63, 21, 33, 0.05);
+}
+
+.field__input:focus {
+  background: #fffdfb;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(168, 88, 63, 0.2);
+}
+
+.field--error .field__input {
+  background: #fffafa;
+  border-color: var(--danger);
+}
+
+.field--error .field__input:focus {
+  box-shadow: 0 0 0 4px rgba(140, 42, 59, 0.18);
+}
+
+.radio {
+  background: rgba(255, 253, 251, 0.62);
+  border: 1.5px solid rgba(64, 49, 47, 0.18);
+  border-radius: 16px;
+}
+
+.radio:hover {
+  border-color: var(--ink-soft);
+  background: rgba(255, 253, 251, 0.85);
+}
+
+.radio:has(input:checked) {
+  background: rgba(168, 88, 63, 0.13);
+  border-color: var(--accent);
+}
+
+.chip {
+  background: rgba(255, 253, 251, 0.7);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 4px 12px -8px rgba(63, 21, 33, 0.3);
+}
+
+.steps__bar {
+  background: rgba(64, 49, 47, 0.14);
+}
+
+.steps__item--current .steps__bar {
+  background: var(--accent);
+}
+
+.steps__item--done .steps__bar {
+  background: var(--ok);
+}
+
+/* ---------- Botones: pildora, con relieve suave ---------- */
+
+.btn {
+  border-radius: 999px;
+  padding: 14px 26px;
+}
+
+.btn--primary {
+  background: linear-gradient(180deg, #ae5d44 0%, #a8583f 58%, #9c4d35 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 12px 24px -12px rgba(168, 88, 63, 0.75);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #b3644a 0%, #a3543b 58%, #974a33 100%);
+}
+
+.btn--ghost {
+  background: rgba(255, 253, 251, 0.78);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 6px 14px -10px rgba(63, 21, 33, 0.35);
+}
+
+.btn--ghost:hover {
+  background: rgba(255, 253, 251, 0.95);
+  border-color: var(--ink-soft);
+}
+
+/* Barra de acciones: flota como una barra de iOS */
+.wz-actions {
+  bottom: 14px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--vidrio);
+  -webkit-backdrop-filter: var(--desenfoque);
+  backdrop-filter: var(--desenfoque);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 999px;
+  box-shadow: var(--vidrio-sombra);
+}
+
+/* ---------- Menos transparencia si el sistema lo pide, o si no hay soporte ---------- */
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --vidrio: rgba(255, 252, 249, 0.97);
+    --vidrio-suave: rgba(250, 244, 238, 0.97);
+    --desenfoque: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --vidrio: rgba(255, 252, 249, 0.95);
+    --vidrio-suave: rgba(250, 244, 238, 0.95);
+  }
+}
+
+@media (max-width: 560px) {
+  .wz-step,
+  .exito {
+    padding: 22px 16px;
+  }
+  .steps {
+    padding: 8px 12px 4px;
+  }
+}

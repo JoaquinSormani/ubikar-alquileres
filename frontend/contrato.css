@@ -624,7 +624,8 @@ select.field__input {
   background: linear-gradient(to top, var(--paper) 72%, rgba(242, 235, 227, 0));
 }
 
-.wz-actions .btn:only-child {
+/* la accion principal siempre a la derecha (aunque "Anterior" este oculto) */
+.wz-actions .btn--primary {
   margin-left: auto;
 }
 
