@@ -7,9 +7,84 @@
   border-radius: 4px;
 }
 
+/* ---------- Login: el isotipo (pin + edificio) como protagonista ---------- */
+
+.access--hero {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: portalIn 380ms var(--ease-out) forwards;
+}
+
+.access__mark--grande .brand-logo {
+  width: clamp(120px, 30vw, 190px);
+  filter: drop-shadow(0 10px 24px rgba(63, 21, 33, 0.16));
+}
+
+.access__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---------- Inicio: header compacto + saludo grande ---------- */
+
+#inicioView .portal__header {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#inicioView .portal__header .wz__logo .brand-logo {
+  width: 48px;
+}
+
+.hub-hero {
+  position: relative;
+  padding: 22px 0 30px;
+}
+
+.hub-hero::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  right: 0;
+  width: 130px;
+  height: 130px;
+  background: url("assets/logo-ubikar-mono.png") center/contain no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.hub-hero__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hub-hero__titulo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 5vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--wine);
+}
+
+.hub-hero__sub {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+}
+
 /* Las 2 opciones del inicio son la puerta a todo el sistema: un poco mas anchas
    y separadas que la eleccion de rol del portal de autogestion. */
 .hub {
+  position: relative;
   max-width: 640px;
 }
 
@@ -19,4 +94,10 @@
 
 .hub .role-choice__label {
   font-size: 1.15rem;
+}
+
+@media (max-width: 480px) {
+  .hub-hero::before {
+    display: none;
+  }
 }

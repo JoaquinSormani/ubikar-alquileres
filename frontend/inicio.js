@@ -38,9 +38,17 @@ function cerrarSesion() {
   }
 }
 
+function saludoSegunHora() {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Buenos días";
+  if (hora < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 function mostrarInicio() {
   $("loginView").hidden = true;
   $("inicioView").hidden = false;
+  $("saludoHora").textContent = saludoSegunHora();
 }
 
 function mostrarLogin() {

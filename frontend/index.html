@@ -13,8 +13,9 @@
 </head>
 <body>
 
-  <main class="access" id="loginView">
-    <div class="access__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+  <main class="access access--hero" id="loginView">
+    <div class="access__mark access__mark--grande wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+    <p class="access__eyebrow">Inmobiliaria UBIKAR</p>
     <h1 class="access__title">Panel del Responsable</h1>
     <p class="access__hint">Ingresá para gestionar los contratos y las propiedades de UBIKAR.</p>
 
@@ -38,15 +39,17 @@
 
   <div class="portal" id="inicioView" hidden>
     <header class="portal__header">
-      <div>
-        <a href="index.html" class="wz__logo portal__mark wordmark" aria-label="Volver al inicio">
-          <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
-        </a>
-        <h1 class="portal__name">Panel del Responsable</h1>
-        <p class="portal__role">Elegí qué querés hacer</p>
-      </div>
+      <a href="index.html" class="wz__logo" aria-label="Volver al inicio">
+        <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
+      </a>
       <button class="btn btn--ghost" id="logoutBtn" type="button">Cerrar sesión</button>
     </header>
+
+    <section class="hub-hero">
+      <p class="hub-hero__eyebrow" id="saludoHora">Hola</p>
+      <h1 class="hub-hero__titulo">Responsable de UBIKAR</h1>
+      <p class="hub-hero__sub">Elegí qué querés hacer para empezar.</p>
+    </section>
 
     <div class="role-choice hub">
       <a class="role-choice__option" href="contrato.html">
