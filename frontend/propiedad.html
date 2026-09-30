@@ -19,7 +19,7 @@
     <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
     <div>
       <h1 class="wz__title">Registrar propiedad</h1>
-      <p class="wz__sub">Elegí al propietario y cargá la dirección de la propiedad.</p>
+      <p class="wz__sub">Cargá la dirección de la propiedad y después buscá al propietario.</p>
     </div>
   </header>
 
@@ -34,24 +34,25 @@
     <p class="req-nota"><span class="req" aria-hidden="true">*</span> Dato obligatorio</p>
 
     <section class="wz-step" data-step="1" hidden>
-      <h2 class="wz-step__title" tabindex="-1">Propietario</h2>
-      <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos; si no, se da de alta junto con la propiedad.</p>
-      <div id="propietarioSlot"></div>
-    </section>
-
-    <section class="wz-step" data-step="2" hidden>
       <h2 class="wz-step__title" tabindex="-1">Datos de la propiedad</h2>
-      <p class="wz-step__hint">La propiedad queda asociada al propietario elegido.</p>
-
-      <div class="resumen">
-        <span>Propietario: <span class="resumen__nombre" id="resumenNombre"></span> · DNI <span id="resumenDni"></span></span>
-        <button type="button" class="linklike" id="cambiarBtn">Cambiar</button>
-      </div>
+      <p class="wz-step__hint">Ingresá la dirección del inmueble a registrar.</p>
 
       <label class="field">
         <span class="field__label">Dirección de la propiedad <span class="req" aria-hidden="true">*</span></span>
         <input class="field__input" id="direccionInput" maxlength="200" placeholder="Ej: Junín 700, Dpto 3" autocomplete="off" required>
       </label>
+    </section>
+
+    <section class="wz-step" data-step="2" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Propietario</h2>
+      <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos; si no, se da de alta junto con la propiedad.</p>
+
+      <div class="resumen">
+        <span>Propiedad: <span class="resumen__nombre" id="resumenDireccion"></span></span>
+        <button type="button" class="linklike" id="cambiarBtn">Cambiar</button>
+      </div>
+
+      <div id="propietarioSlot"></div>
       <p class="hint" id="avisoNuevo" hidden>Este propietario es nuevo: se da de alta junto con la propiedad.</p>
 
       <div class="existentes" id="existentes" hidden>

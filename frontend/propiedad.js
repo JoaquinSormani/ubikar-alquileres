@@ -3,7 +3,7 @@
 const API_BASE = "http://localhost:8081";
 const API = `${API_BASE}/api`;
 
-const PASOS = ["Propietario", "Propiedad"];
+const PASOS = ["Propiedad", "Propietario"];
 const catalogo = { propietarios: [], inquilinos: [], garantes: [], propiedades: [] };
 const $ = (id) => document.getElementById(id);
 
@@ -30,11 +30,11 @@ function normalizar(texto) {
 
 // ---------- bloque de datos del propietario ----------
 
-function crearPersona() {
+function crearPersona({ onBuscar } = {}) {
   const nodo = $("tplPersona").content.firstElementChild.cloneNode(true);
   const campo = (nombre) => nodo.querySelector(`[data-f="${nombre}"]`);
   const estado = nodo.querySelector(".persona__estado");
-  const persona = { nodo, id: null };
+  const persona = { nodo, id: null, buscado: false };
   let ultimoBuscado = "";
 
   function mensaje(texto, clase) {
@@ -60,11 +60,13 @@ function crearPersona() {
     }
     ultimoBuscado = dni;
     campo("dni").value = dni;
+    persona.buscado = true;
     const propio = catalogo.propietarios.find((p) => p.dni === dni);
     if (propio) {
       persona.id = propio.id;
       llenar(propio);
       mensaje("Ya registrado en UBIKAR. Si corregís algún dato, se actualiza al guardar la propiedad.", "ok");
+      if (onBuscar) onBuscar();
       return;
     }
     persona.id = null;
@@ -75,6 +77,7 @@ function crearPersona() {
     } else {
       mensaje("DNI nuevo: se da de alta junto con la propiedad.", "new");
     }
+    if (onBuscar) onBuscar();
   }
 
   nodo.querySelector(".persona__buscar").addEventListener("click", buscar);
@@ -89,7 +92,9 @@ function crearPersona() {
     if (persona.id !== null || ultimoBuscado) {
       persona.id = null;
       ultimoBuscado = "";
+      persona.buscado = false;
       mensaje("", "");
+      if (onBuscar) onBuscar();
     }
   });
   campo("dni").addEventListener("blur", () => {
@@ -132,10 +137,14 @@ function propiedadesDelPropietario() {
   return id === undefined ? [] : catalogo.propiedades.filter((p) => p.idPropietario === id);
 }
 
-function pintarPaso2() {
+function actualizarInfoPropietario() {
+  // Antes de buscar un DNI no hay nada que mostrar todavía.
+  if (!propietario.buscado) {
+    $("avisoNuevo").hidden = true;
+    $("existentes").hidden = true;
+    return;
+  }
   const d = propietario.datos();
-  $("resumenNombre").textContent = `${d.nombre} ${d.apellido}`;
-  $("resumenDni").textContent = d.dni;
   const esNuevo = d.id === undefined;
   $("avisoNuevo").hidden = !esNuevo;
 
@@ -156,21 +165,32 @@ function pintarPaso2() {
   }
 }
 
+function pintarPaso2() {
+  $("resumenDireccion").textContent = $("direccionInput").value.trim();
+  actualizarInfoPropietario();
+}
+
 // ---------- validacion y armado del pedido ----------
 
 function erroresDelPaso(n) {
-  if (n === 1) return propietario.errores();
-  const e = [];
-  if (n === 2) {
+  if (n === 1) {
     const campoDireccion = $("direccionInput");
     const direccion = campoDireccion.value.trim();
     if (direccion.length < 5) {
-      e.push({ campo: campoDireccion, mensaje: "Ingresá la dirección de la propiedad: calle, número y, si corresponde, piso o departamento." });
-    } else if (propiedadesDelPropietario().some((p) => normalizar(p.direccion) === normalizar(direccion))) {
-      e.push({ campo: campoDireccion, mensaje: "Este propietario ya tiene una propiedad registrada con esa dirección." });
+      return [{ campo: campoDireccion, mensaje: "Ingresá la dirección de la propiedad: calle, número y, si corresponde, piso o departamento." }];
+    }
+    return [];
+  }
+  if (n === 2) {
+    const errores = propietario.errores();
+    if (errores.length) return errores;
+    // Recien acá se sabe quién es el propietario, así que el duplicado se controla en este paso.
+    const direccion = $("direccionInput").value.trim();
+    if (propiedadesDelPropietario().some((p) => normalizar(p.direccion) === normalizar(direccion))) {
+      return [{ campo: null, mensaje: "Este propietario ya tiene una propiedad registrada con esa dirección." }];
     }
   }
-  return e;
+  return [];
 }
 
 function armarSolicitud() {
@@ -215,7 +235,11 @@ function irAPaso(n, { registrar = true } = {}) {
   const titulo = document.querySelector(`.wz-step[data-step="${n}"] .wz-step__title`);
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (titulo) titulo.focus({ preventScroll: true });
-  if (n === 2) $("direccionInput").focus({ preventScroll: true });
+  if (n === 1) $("direccionInput").focus({ preventScroll: true });
+  if (n === 2) {
+    const campoDni = $("propietarioSlot").querySelector('[data-f="dni"]');
+    if (campoDni) campoDni.focus({ preventScroll: true });
+  }
 }
 
 function seccionActual() {
@@ -339,7 +363,7 @@ async function cargarCatalogos() {
   }
 }
 
-propietario = crearPersona();
+propietario = crearPersona({ onBuscar: actualizarInfoPropietario });
 $("propietarioSlot").append(propietario.nodo);
 history.replaceState({ paso: 1 }, "", "#paso-1");
 irAPaso(1, { registrar: false });
