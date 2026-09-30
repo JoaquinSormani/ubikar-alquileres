@@ -7,14 +7,14 @@ import org.sql2o.Connection;
 
 public class PagoDAO {
 
-    public List<Pago> selectAll() {
+    public List<Pago> readAll() {
         String sql = "SELECT * FROM pago";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql).executeAndFetch(Pago.class);
         }
     }
 
-    public Pago selectById(Integer id) {
+    public Pago read(Integer id) {
         String sql = "SELECT * FROM pago WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)
@@ -41,13 +41,13 @@ public class PagoDAO {
         }
     }
 
-    public Integer insert(Pago p) {
+    public Integer create(Pago p) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, p);
+            return create(con, p);
         }
     }
 
-    public Integer insert(Connection con, Pago p) {
+    public Integer create(Connection con, Pago p) {
         String sql = "INSERT INTO pago (idContrato, fecha, monto, indiceActualizacion, diasAtraso, punitorio, estado) "
                 + "VALUES (:idContrato, :fecha, :monto, :indiceActualizacion, :diasAtraso, :punitorio, :estado)";
         return con.createQuery(sql, true).bind(p).executeUpdate().getKey(Integer.class);

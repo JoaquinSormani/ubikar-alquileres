@@ -9,14 +9,14 @@ import org.sql2o.Connection;
 
 public class ContratoDAO {
 
-    public List<Contrato> selectAll() {
+    public List<Contrato> readAll() {
         String sql = "SELECT * FROM contrato";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql).executeAndFetch(Contrato.class);
         }
     }
 
-    public Contrato selectById(Integer id) {
+    public Contrato read(Integer id) {
         String sql = "SELECT * FROM contrato WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)
@@ -54,13 +54,13 @@ public class ContratoDAO {
         }
     }
 
-    public Integer insert(Contrato c) {
+    public Integer create(Contrato c) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, c);
+            return create(con, c);
         }
     }
 
-    public Integer insert(Connection con, Contrato c) {
+    public Integer create(Connection con, Contrato c) {
         String sql = "INSERT INTO contrato (idPropiedad, fechaInicio, fechaFin, valorInicial, periodicidadActualizacion, "
                 + "indiceActualizacion, destino, depositoGarantia, tipoGarantia) "
                 + "VALUES (:idPropiedad, :fechaInicio, :fechaFin, :valorInicial, :periodicidadActualizacion, "

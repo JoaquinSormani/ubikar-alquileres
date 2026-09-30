@@ -82,11 +82,11 @@ public class ContratoServicio {
             c.setDestino(s.getDestino());
             c.setDepositoGarantia(s.getDepositoGarantia() != null ? s.getDepositoGarantia() : s.getValorInicial());
             c.setTipoGarantia(s.getTipoGarantia());
-            c.setId(contratoDAO.insert(con, c));
+            c.setId(contratoDAO.create(con, c));
 
             for (Inquilino i : s.getInquilinos()) {
                 if (i.getId() == null) {
-                    i.setId(inquilinoDAO.insert(con, i));
+                    i.setId(inquilinoDAO.create(con, i));
                 } else {
                     inquilinoDAO.update(con, i);
                 }
@@ -95,7 +95,7 @@ public class ContratoServicio {
             }
             for (Garante g : s.getGarantes()) {
                 if (g.getId() == null) {
-                    g.setId(garanteDAO.insert(con, g));
+                    g.setId(garanteDAO.create(con, g));
                 } else {
                     garanteDAO.update(con, g);
                 }
@@ -106,10 +106,10 @@ public class ContratoServicio {
             Inventario inventario = new Inventario();
             inventario.setIdContrato(c.getId());
             inventario.setFechaRegistro(LocalDate.now());
-            inventario.setId(inventarioDAO.insert(con, inventario));
+            inventario.setId(inventarioDAO.create(con, inventario));
             for (RenglonInventario r : s.getRenglones()) {
                 r.setIdInventario(inventario.getId());
-                r.setId(renglonDAO.insert(con, r));
+                r.setId(renglonDAO.create(con, r));
                 inventario.getRenglones().add(r);
             }
             c.setInventario(inventario);
@@ -124,7 +124,7 @@ public class ContratoServicio {
             doc.setTipo(TipoDocumento.CONTRATO);
             doc.setArchivo(archivo.toString().replace('\\', '/'));
             doc.setFechaCarga(LocalDate.now());
-            doc.setId(documentacionDAO.insert(con, doc));
+            doc.setId(documentacionDAO.create(con, doc));
             c.getDocumentacion().add(doc);
 
             con.commit(false);
@@ -154,9 +154,9 @@ public class ContratoServicio {
                 "Falta elegir un propietario registrado.");
         requerido(s.getPropiedad() != null && s.getPropiedad().getId() != null,
                 "Falta elegir una propiedad registrada.");
-        Propietario propietario = propietarioDAO.selectById(s.getPropietario().getId());
+        Propietario propietario = propietarioDAO.read(s.getPropietario().getId());
         requerido(propietario != null, "El propietario indicado no está registrado. Registralo primero desde Registrar Propiedad.");
-        Propiedad propiedad = propiedadDAO.selectById(s.getPropiedad().getId());
+        Propiedad propiedad = propiedadDAO.read(s.getPropiedad().getId());
         requerido(propiedad != null && propiedad.getIdPropietario().equals(propietario.getId()),
                 "La propiedad elegida no pertenece al propietario indicado.");
         s.setPropietario(propietario);

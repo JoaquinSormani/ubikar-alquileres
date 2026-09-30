@@ -17,6 +17,6 @@ public class GaranteControlador {
 
     @GetMapping
     public List<Garante> getGarantes() {
-        return garanteDAO.selectAll();
+        return garanteDAO.readAll();
     }
 }

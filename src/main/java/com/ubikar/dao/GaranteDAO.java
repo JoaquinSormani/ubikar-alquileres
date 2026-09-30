@@ -6,14 +6,14 @@ import org.sql2o.Connection;
 
 public class GaranteDAO {
 
-    public List<Garante> selectAll() {
+    public List<Garante> readAll() {
         String sql = "SELECT * FROM garante";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql).executeAndFetch(Garante.class);
         }
     }
 
-    public Garante selectById(Integer id) {
+    public Garante read(Integer id) {
         String sql = "SELECT * FROM garante WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)
@@ -22,13 +22,13 @@ public class GaranteDAO {
         }
     }
 
-    public Integer insert(Garante g) {
+    public Integer create(Garante g) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, g);
+            return create(con, g);
         }
     }
 
-    public Integer insert(Connection con, Garante g) {
+    public Integer create(Connection con, Garante g) {
         String sql = "INSERT INTO garante (nombre, apellido, dni, telefono, email, domicilio, detalle) "
                 + "VALUES (:nombre, :apellido, :dni, :telefono, :email, :domicilio, :detalle)";
         return con.createQuery(sql, true).bind(g).executeUpdate().getKey(Integer.class);

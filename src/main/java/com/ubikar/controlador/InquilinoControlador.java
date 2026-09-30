@@ -21,12 +21,12 @@ public class InquilinoControlador {
 
     @GetMapping
     public List<Inquilino> getInquilinos() {
-        return inquilinoDAO.selectAll();
+        return inquilinoDAO.readAll();
     }
 
     @PostMapping
     public Inquilino insertInquilino(@RequestBody Inquilino inquilino) {
-        Integer id = inquilinoDAO.insert(inquilino);
+        Integer id = inquilinoDAO.create(inquilino);
         inquilino.setId(id);
         return inquilino;
     }

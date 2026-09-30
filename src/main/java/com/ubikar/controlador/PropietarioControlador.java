@@ -21,12 +21,12 @@ public class PropietarioControlador {
 
     @GetMapping
     public List<Propietario> getPropietarios() {
-        return propietarioDAO.selectAll();
+        return propietarioDAO.readAll();
     }
 
     @PostMapping
     public Propietario insertPropietario(@RequestBody Propietario propietario) {
-        Integer id = propietarioDAO.insert(propietario);
+        Integer id = propietarioDAO.create(propietario);
         propietario.setId(id);
         return propietario;
     }

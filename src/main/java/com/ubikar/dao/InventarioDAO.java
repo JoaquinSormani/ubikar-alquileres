@@ -14,19 +14,19 @@ public class InventarioDAO {
         }
     }
 
-    public Integer insert(Inventario i) {
+    public Integer create(Inventario i) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, i);
+            return create(con, i);
         }
     }
 
-    public Integer insert(Connection con, Inventario i) {
+    public Integer create(Connection con, Inventario i) {
         String sql = "INSERT INTO inventario (idContrato, fechaRegistro) "
                 + "VALUES (:idContrato, :fechaRegistro)";
         return con.createQuery(sql, true).bind(i).executeUpdate().getKey(Integer.class);
     }
 
-    public Inventario selectById(Integer id) {
+    public Inventario read(Integer id) {
         String sql = "SELECT * FROM inventario WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)

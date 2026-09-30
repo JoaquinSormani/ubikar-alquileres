@@ -15,19 +15,19 @@ public class DocumentacionDAO {
         }
     }
 
-    public Integer insert(Documentacion d) {
+    public Integer create(Documentacion d) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, d);
+            return create(con, d);
         }
     }
 
-    public Integer insert(Connection con, Documentacion d) {
+    public Integer create(Connection con, Documentacion d) {
         String sql = "INSERT INTO documentacion (idContrato, tipo, archivo, fechaCarga) "
                 + "VALUES (:idContrato, :tipo, :archivo, :fechaCarga)";
         return con.createQuery(sql, true).bind(d).executeUpdate().getKey(Integer.class);
     }
 
-    public Documentacion selectById(Integer id) {
+    public Documentacion read(Integer id) {
         String sql = "SELECT * FROM documentacion WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)

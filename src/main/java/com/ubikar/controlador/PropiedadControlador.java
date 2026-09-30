@@ -27,7 +27,7 @@ public class PropiedadControlador {
 
     @GetMapping
     public List<Propiedad> getPropiedades(@RequestParam(required = false) Integer idPropietario) {
-        return idPropietario == null ? propiedadDAO.selectAll() : propiedadDAO.selectByPropietario(idPropietario);
+        return idPropietario == null ? propiedadDAO.readAll() : propiedadDAO.selectByPropietario(idPropietario);
     }
 
     @PostMapping

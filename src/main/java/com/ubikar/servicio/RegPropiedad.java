@@ -18,7 +18,7 @@ public class RegPropiedad {
         String direccion = s.getDireccion().trim().replaceAll("\\s+", " ");
 
         // Control de duplicados (evita registrar la misma dirección si ya existe en el sistema)
-        Propiedad existente = propiedadDAO.selectAll().stream()
+        Propiedad existente = propiedadDAO.readAll().stream()
                 .filter(x -> x.getDireccion().trim().equalsIgnoreCase(direccion))
                 .findFirst()
                 .orElse(null);
@@ -33,14 +33,14 @@ public class RegPropiedad {
 
         try (Connection con = Sql2oDAO.getSql2o().beginTransaction()) {
             if (p.getId() == null) {
-                p.setId(propietarioDAO.insert(con, p));
+                p.setId(propietarioDAO.create(con, p));
             } else {
                 propietarioDAO.update(con, p);
             }
             Propiedad nueva = new Propiedad();
             nueva.setDireccion(direccion);
             nueva.setIdPropietario(p.getId());
-            nueva.setId(propiedadDAO.insert(con, nueva));
+            nueva.setId(propiedadDAO.create(con, nueva));
             con.commit(false);
             return nueva;
         }
@@ -55,7 +55,7 @@ public class RegPropiedad {
         requerido(hayTexto(s.getDireccion()) && s.getDireccion().trim().length() >= 5, "Falta la dirección de la propiedad.");
         p.setDni(p.getDni().replaceAll("\\D", ""));
         if (p.getId() == null) {
-            requerido(propietarioDAO.selectAll().stream().noneMatch(x -> x.getDni().equals(p.getDni())),
+            requerido(propietarioDAO.readAll().stream().noneMatch(x -> x.getDni().equals(p.getDni())),
                     "Ya existe un propietario con ese DNI.");
         }
     }

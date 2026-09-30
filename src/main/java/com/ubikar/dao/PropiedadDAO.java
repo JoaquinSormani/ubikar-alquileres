@@ -6,14 +6,14 @@ import org.sql2o.Connection;
 
 public class PropiedadDAO {
 
-    public List<Propiedad> selectAll() {
+    public List<Propiedad> readAll() {
         String sql = "SELECT * FROM propiedad";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql).executeAndFetch(Propiedad.class);
         }
     }
 
-    public Propiedad selectById(Integer id) {
+    public Propiedad read(Integer id) {
         String sql = "SELECT * FROM propiedad WHERE id = :id";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)
@@ -31,13 +31,13 @@ public class PropiedadDAO {
         }
     }
 
-    public Integer insert(Propiedad p) {
+    public Integer create(Propiedad p) {
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            return insert(con, p);
+            return create(con, p);
         }
     }
 
-    public Integer insert(Connection con, Propiedad p) {
+    public Integer create(Connection con, Propiedad p) {
         String sql = "INSERT INTO propiedad (direccion, idPropietario) "
                 + "VALUES (:direccion, :idPropietario)";
         return con.createQuery(sql, true).bind(p).executeUpdate().getKey(Integer.class);
