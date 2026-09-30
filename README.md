@@ -38,8 +38,10 @@ java -jar target/ubikar-alquileres.jar
 Abrir `frontend/index.html` con un servidor local (por ejemplo la extension Live Server en Antigravity/VSCode) mientras el backend esta corriendo. El frontend apunta a `http://localhost:8081`.
 
 Paginas:
-- `portal.html`: portal de autogestion de inquilinos y propietarios (acceso por DNI).
+- `index.html`: acceso del Responsable (usuario `responsable` / clave `ubikar2026`, solo del lado del front: no hay backend de autenticacion todavia) e inicio con las 2 opciones.
 - `contrato.html`: asistente del Responsable para **Registrar Contrato de Alquiler**.
+- `propiedad.html`: asistente del Responsable para **Registrar Propiedad**.
+- `portal.html`: portal de autogestion de inquilinos y propietarios (acceso por DNI), independiente del login del Responsable.
 
 ## Caso de uso implementado: Registrar Contrato de Alquiler
 

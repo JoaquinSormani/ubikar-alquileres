@@ -1,34 +1,65 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>UBIKAR - Inquilinos</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBIKAR - Panel del Responsable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="inicio.css">
+<link rel="stylesheet" href="vidrio.css">
 </head>
 <body>
-  <h1>UBIKAR - Inquilinos (prueba de conexion)</h1>
 
-  <h2>Alta de inquilino</h2>
-  <label for="nombre">Nombre:</label>
-  <input type="text" id="nombre">
-  <br><br>
-  <label for="apellido">Apellido:</label>
-  <input type="text" id="apellido">
-  <br><br>
-  <label for="dni">DNI:</label>
-  <input type="text" id="dni">
-  <br><br>
-  <label for="telefono">Telefono:</label>
-  <input type="text" id="telefono">
-  <br><br>
-  <label for="email">Email:</label>
-  <input type="text" id="email">
-  <br><br>
-  <button onclick="crearInquilino()">Guardar</button>
+  <main class="access" id="loginView">
+    <div class="access__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+    <h1 class="access__title">Panel del Responsable</h1>
+    <p class="access__hint">Ingresá para gestionar los contratos y las propiedades de UBIKAR.</p>
 
-  <h2>Listado</h2>
-  <button onclick="cargarInquilinos()">Refrescar</button>
-  <ul id="listaInquilinos"></ul>
+    <form class="access__form" id="loginForm" novalidate>
+      <label class="field">
+        <span class="field__label">Usuario</span>
+        <input class="field__input" type="text" id="usuarioInput" autocomplete="username" required>
+      </label>
+      <label class="field">
+        <span class="field__label">Contraseña</span>
+        <input class="field__input" type="password" id="claveInput" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn--primary" type="submit">
+        <span>Ingresar</span>
+      </button>
+      <p class="access__error" id="loginError" role="alert" hidden></p>
+    </form>
 
-  <script src="script.js"></script>
+    <p class="access__demo">Usuario de prueba: <code>responsable</code> · Contraseña: <code>ubikar2026</code></p>
+  </main>
+
+  <div class="portal" id="inicioView" hidden>
+    <header class="portal__header">
+      <div>
+        <a href="index.html" class="wz__logo portal__mark wordmark" aria-label="Volver al inicio">
+          <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
+        </a>
+        <h1 class="portal__name">Panel del Responsable</h1>
+        <p class="portal__role">Elegí qué querés hacer</p>
+      </div>
+      <button class="btn btn--ghost" id="logoutBtn" type="button">Cerrar sesión</button>
+    </header>
+
+    <div class="role-choice hub">
+      <a class="role-choice__option" href="contrato.html">
+        <span class="role-choice__label">Nuevo contrato de alquiler</span>
+        <span class="role-choice__hint">Cargar un contrato, sus partes, condiciones e inventario</span>
+      </a>
+      <a class="role-choice__option" href="propiedad.html">
+        <span class="role-choice__label">Registrar propiedad</span>
+        <span class="role-choice__hint">Dar de alta una propiedad y a su propietario</span>
+      </a>
+    </div>
+  </div>
+
+<script src="inicio.js"></script>
 </body>
 </html>

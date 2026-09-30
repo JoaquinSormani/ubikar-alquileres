@@ -22,6 +22,29 @@
   flex-shrink: 0;
 }
 
+/* Convencion: el logo en la esquina lleva al inicio. Se suma un link explicito
+   al lado (wz__volver) porque no todos reconocen esa convencion a simple vista. */
+.wz__logo {
+  display: block;
+  border-radius: 12px;
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.wz__logo:hover {
+  opacity: 0.85;
+}
+
+.wz__logo:active {
+  transform: scale(0.96);
+}
+
+.wz__volver {
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: center;
+}
+
 .wz__title {
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 3.4vw, 1.95rem);
@@ -175,6 +198,13 @@
   }
   .grid2 {
     grid-template-columns: 1fr;
+  }
+  .wz__header {
+    flex-wrap: wrap;
+  }
+  .wz__volver {
+    margin-left: 0;
+    flex-basis: 100%;
   }
 }
 

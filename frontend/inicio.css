@@ -1,0 +1,22 @@
+/* Panel del Responsable: reutiliza los componentes de portal.css (.access, .role-choice) */
+
+.access__demo code {
+  font-family: var(--font-data);
+  background: var(--accent-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Las 2 opciones del inicio son la puerta a todo el sistema: un poco mas anchas
+   y separadas que la eleccion de rol del portal de autogestion. */
+.hub {
+  max-width: 640px;
+}
+
+.hub .role-choice__option {
+  padding: 22px 24px;
+}
+
+.hub .role-choice__label {
+  font-size: 1.15rem;
+}

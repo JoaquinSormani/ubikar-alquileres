@@ -183,6 +183,8 @@ textarea {
   align-items: flex-start;
   gap: 3px;
   text-align: left;
+  text-decoration: none;
+  color: inherit;
   padding: 16px 18px;
   border: 1.5px solid var(--line);
   border-radius: 12px;
