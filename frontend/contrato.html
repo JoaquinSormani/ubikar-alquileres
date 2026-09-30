@@ -119,13 +119,14 @@
     <section class="wz-step" data-step="5" hidden>
       <h2 class="wz-step__title" tabindex="-1">Inventario de la propiedad</h2>
       <p class="wz-step__hint">Estado de cada elemento al entregar la propiedad. Se anexa al contrato y sirve para comparar al finalizar.</p>
+      <p class="inv-resumen" id="invResumen" aria-live="polite" hidden></p>
       <div class="presets" id="presets" aria-label="Agregar ambiente típico"></div>
-      <div class="inv" id="invSlot">
-        <div class="inv__head" aria-hidden="true">
-          <span>Ambiente</span><span>Elemento</span><span>Estado</span><span>Observaciones</span><span></span>
-        </div>
+      <div class="inv-otro">
+        <input class="field__input" id="otroAmbienteInput" placeholder="Otro ambiente (Ej: Patio, Terraza)…" list="ambientes" autocomplete="off">
+        <button type="button" class="btn btn--ghost" id="otroAmbienteBtn">Agregar ambiente</button>
       </div>
-      <button type="button" class="btn btn--ghost" id="addRenglonBtn">Agregar elemento</button>
+      <p class="inv-vacio" id="invVacio">Elegí un ambiente típico o agregá el tuyo para empezar a cargar el inventario.</p>
+      <div id="invSlot"></div>
     </section>
 
     <section class="wz-step" data-step="6" hidden>

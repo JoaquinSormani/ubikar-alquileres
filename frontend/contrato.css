@@ -388,7 +388,7 @@ select.field__input {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .chip {
@@ -401,7 +401,7 @@ select.field__input {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
+  transition: border-color 160ms var(--ease-out), transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
 .chip:hover {
@@ -412,14 +412,90 @@ select.field__input {
   transform: scale(0.97);
 }
 
-.inv {
+/* el ambiente de este chip ya tiene un grupo cargado: tocarlo lleva ahi en vez de duplicar */
+.chip--cargado {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.inv-otro {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.inv-otro .field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-resumen {
+  margin: -6px 0 18px;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+
+.inv-vacio {
+  padding: 20px;
   margin-bottom: 16px;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* ---------- Grupo por ambiente ---------- */
+
+.inv-grupo {
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-raised);
+  padding: 16px 18px 18px;
+  margin-bottom: 14px;
+  animation: stepIn 200ms var(--ease-out);
+  transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+
+.inv-grupo--resaltado {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.inv-grupo__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.inv-grupo__titulo {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--navy);
+}
+
+.inv-grupo__contador {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink-soft);
+  margin-left: 4px;
+}
+
+.inv-grupo__body {
+  margin-bottom: 6px;
 }
 
 .inv__head,
 .inv__row {
   display: grid;
-  grid-template-columns: 1fr 1.3fr 118px 1.3fr 36px;
+  grid-template-columns: 1.3fr 132px 1.3fr 76px;
   gap: 8px;
   align-items: center;
 }
@@ -457,15 +533,56 @@ select.field__input {
   width: 100%;
 }
 
+.inv__estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inv__punto {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.inv__punto--nuevo {
+  background: var(--navy);
+}
+
+.inv__punto--bueno {
+  background: var(--ok);
+}
+
+.inv__punto--regular {
+  background: var(--warn);
+}
+
+.inv__punto--malo {
+  background: var(--danger);
+}
+
+.inv__acciones {
+  display: flex;
+  gap: 2px;
+}
+
+.inv__dup,
 .inv__del {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border: none;
   background: none;
   color: var(--ink-soft);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.inv__dup:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .inv__del:hover {
@@ -486,16 +603,26 @@ select.field__input {
     padding: 14px 0 6px;
     border-top: 1px solid var(--line);
   }
-  .inv__row .inv__del {
+  .inv__acciones {
     grid-column: 1 / -1;
     justify-self: end;
+    gap: 8px;
+  }
+  .inv__dup,
+  .inv__del {
     width: auto;
     padding: 0 14px;
     font-size: 0.85rem;
     font-weight: 600;
   }
-  .inv__row .inv__del::after {
+  .inv__dup::after {
+    content: " Duplicar";
+  }
+  .inv__del::after {
     content: " Quitar";
+  }
+  .inv-otro {
+    flex-direction: column;
   }
 }
 

@@ -360,45 +360,136 @@ function actualizarDerivados() {
 }
 
 // ---------- paso 5: inventario ----------
+// El inventario se agrupa por ambiente: el ambiente se fija una vez por grupo
+// (no se retipea en cada fila), lo que evita duplicados y errores de tipeo al
+// contarlos en la Revisión.
 
-function agregarRenglon(valores = {}) {
+function normalizarAmbiente(texto) {
+  return texto.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+// "cocina  grande" -> "Cocina Grande" (para que "Cocina" y "cocina" sean el mismo grupo)
+function tituloAmbiente(texto) {
+  return texto.trim().replace(/\s+/g, " ").replace(/\p{L}+/gu, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase());
+}
+
+function buscarGrupo(ambiente) {
+  const clave = normalizarAmbiente(ambiente);
+  return [...$("invSlot").children].find((g) => normalizarAmbiente(g.dataset.ambiente) === clave);
+}
+
+function agregarItem(grupo, valores = {}) {
+  const cuerpo = grupo.querySelector(".inv-grupo__body");
   const fila = el("div", "inv__row");
-  const ambiente = el("input", "field__input");
-  ambiente.value = valores.ambiente || "";
-  ambiente.setAttribute("aria-label", "Ambiente");
-  ambiente.setAttribute("list", "ambientes");
   const objeto = el("input", "field__input");
   objeto.value = valores.objeto || "";
   objeto.setAttribute("aria-label", "Elemento");
+  const estadoWrap = el("div", "inv__estado");
+  const punto = el("span", "inv__punto");
   const estado = el("select", "field__input");
   estado.setAttribute("aria-label", "Estado");
   opciones(estado, ESTADOS);
   estado.value = valores.estado || "BUENO";
+  const pintarPunto = () => {
+    punto.className = `inv__punto inv__punto--${estado.value.toLowerCase()}`;
+  };
+  pintarPunto();
+  estado.addEventListener("change", pintarPunto);
+  estadoWrap.append(punto, estado);
   const obs = el("input", "field__input");
   obs.value = valores.observaciones || "";
   obs.setAttribute("aria-label", "Observaciones");
+  const acciones = el("div", "inv__acciones");
+  const duplicar = el("button", "inv__dup", "⧉");
+  duplicar.type = "button";
+  duplicar.setAttribute("aria-label", "Duplicar elemento");
+  duplicar.addEventListener("click", () => {
+    agregarItem(grupo, fila.datos());
+    actualizarInventarioUI();
+  });
   const borrar = el("button", "inv__del", "×");
   borrar.type = "button";
   borrar.setAttribute("aria-label", "Quitar elemento");
-  borrar.addEventListener("click", () => fila.remove());
+  borrar.addEventListener("click", () => {
+    fila.remove();
+    actualizarInventarioUI();
+  });
+  acciones.append(duplicar, borrar);
   const celda = (texto, control) => {
     const c = el("label", "inv__cell");
     c.append(el("span", "inv__lbl", texto), control);
     return c;
   };
-  fila.append(celda("Ambiente", ambiente), celda("Elemento", objeto), celda("Estado", estado), celda("Observaciones", obs), borrar);
+  fila.append(celda("Elemento", objeto), celda("Estado", estadoWrap), celda("Observaciones", obs), acciones);
   fila.datos = () => ({
-    ambiente: ambiente.value.trim(),
+    ambiente: grupo.dataset.ambiente,
     objeto: objeto.value.trim(),
     estado: estado.value,
     observaciones: obs.value.trim(),
   });
-  $("invSlot").append(fila);
+  cuerpo.append(fila);
   return fila;
+}
+
+function crearGrupo(nombreOriginal) {
+  const nombre = tituloAmbiente(nombreOriginal);
+  const grupo = el("div", "inv-grupo");
+  grupo.dataset.ambiente = nombre;
+  const head = el("div", "inv-grupo__head");
+  const titulo = el("h3", "inv-grupo__titulo", nombre);
+  titulo.append(el("span", "inv-grupo__contador"));
+  const quitar = el("button", "linklike", "Quitar ambiente");
+  quitar.type = "button";
+  quitar.addEventListener("click", () => {
+    grupo.remove();
+    actualizarInventarioUI();
+  });
+  head.append(titulo, quitar);
+  const colHead = el("div", "inv__head");
+  colHead.setAttribute("aria-hidden", "true");
+  ["Elemento", "Estado", "Observaciones", ""].forEach((t) => colHead.append(el("span", "", t)));
+  const cuerpo = el("div", "inv-grupo__body");
+  const agregarBtn = el("button", "btn btn--ghost", "+ Agregar ítem");
+  agregarBtn.type = "button";
+  agregarBtn.addEventListener("click", () => {
+    const fila = agregarItem(grupo, {});
+    actualizarInventarioUI();
+    fila.querySelector('input[aria-label="Elemento"]').focus();
+  });
+  grupo.append(head, colHead, cuerpo, agregarBtn);
+  $("invSlot").append(grupo);
+  return grupo;
+}
+
+function obtenerOCrearGrupo(nombre) {
+  return buscarGrupo(nombre) || crearGrupo(nombre);
 }
 
 function renglones() {
   return [...$("invSlot").querySelectorAll(".inv__row")].map((f) => f.datos()).filter((r) => r.objeto);
+}
+
+// Cuenta por grupo, resumen general, marca en los chips el ambiente ya cargado
+// y muestra/oculta el aviso de "todavía no cargaste nada". Se llama despues de
+// cualquier cambio (alta, baja, edicion de un campo).
+function actualizarInventarioUI() {
+  document.querySelectorAll(".inv-grupo").forEach((grupo) => {
+    const cantidad = [...grupo.querySelectorAll(".inv__row")].filter((f) => f.datos().objeto).length;
+    grupo.querySelector(".inv-grupo__contador").textContent = cantidad ? ` (${cantidad})` : " (vacío)";
+  });
+  document.querySelectorAll(".chip").forEach((chip) => {
+    chip.classList.toggle("chip--cargado", !!buscarGrupo(chip.dataset.ambiente));
+  });
+  const lista = renglones();
+  const resumen = $("invResumen");
+  if (lista.length === 0) {
+    resumen.hidden = true;
+  } else {
+    const cantAmbientes = new Set(lista.map((r) => r.ambiente)).size;
+    resumen.hidden = false;
+    resumen.textContent = `${lista.length} elemento${lista.length === 1 ? "" : "s"} cargado${lista.length === 1 ? "" : "s"} en ${cantAmbientes} ambiente${cantAmbientes === 1 ? "" : "s"}.`;
+  }
+  $("invVacio").hidden = $("invSlot").children.length > 0;
 }
 
 function iniciarInventario() {
@@ -410,19 +501,44 @@ function iniciarInventario() {
   Object.entries(PRESETS).forEach(([ambiente, items]) => {
     const chip = el("button", "chip", `+ ${ambiente}`);
     chip.type = "button";
+    chip.dataset.ambiente = ambiente;
     chip.addEventListener("click", () => {
-      vaciarRenglonesEnBlanco();
-      items.forEach((objeto) => agregarRenglon({ ambiente, objeto, estado: "BUENO" }));
+      const existente = buscarGrupo(ambiente);
+      if (existente) {
+        // Ya está cargado: llevar ahi en vez de duplicarlo (antes, tocar el chip
+        // de nuevo agregaba los mismos elementos otra vez).
+        existente.scrollIntoView({ behavior: "smooth", block: "center" });
+        existente.classList.add("inv-grupo--resaltado");
+        setTimeout(() => existente.classList.remove("inv-grupo--resaltado"), 900);
+        return;
+      }
+      const grupo = crearGrupo(ambiente);
+      items.forEach((objeto) => agregarItem(grupo, { objeto, estado: "BUENO" }));
+      actualizarInventarioUI();
     });
     $("presets").append(chip);
   });
-  agregarRenglon();
-}
 
-function vaciarRenglonesEnBlanco() {
-  $("invSlot").querySelectorAll(".inv__row").forEach((f) => {
-    if (!f.datos().objeto) f.remove();
+  $("otroAmbienteBtn").addEventListener("click", () => {
+    const nombre = $("otroAmbienteInput").value.trim();
+    if (!nombre) {
+      $("otroAmbienteInput").focus();
+      return;
+    }
+    const grupo = obtenerOCrearGrupo(nombre);
+    const fila = agregarItem(grupo, {});
+    $("otroAmbienteInput").value = "";
+    actualizarInventarioUI();
+    fila.querySelector('input[aria-label="Elemento"]').focus();
   });
+  $("otroAmbienteInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      $("otroAmbienteBtn").click();
+    }
+  });
+
+  actualizarInventarioUI();
 }
 
 // ---------- validación, armado y revisión ----------
@@ -516,6 +632,7 @@ function renderRevision() {
   const fin = textoFecha(fechaFin(s.fechaInicio, s.duracionMeses));
   const deposito = s.depositoGarantia === null ? s.valorInicial : s.depositoGarantia;
   const tipo = TIPOS_GARANTIA.find(([v]) => v === s.tipoGarantia)[1];
+  const cantAmbientesRev = new Set(s.renglones.map((r) => r.ambiente)).size;
   const review = $("review");
   review.innerHTML = "";
   const cifra = (num, cap, extra = "") => {
@@ -546,7 +663,7 @@ function renderRevision() {
       ["Destino", s.destino === "VIVIENDA" ? "Vivienda" : "Comercial"],
       ["Modelo de contrato", s.plantilla === "completa" ? "Completo (20 cláusulas)" : "Estándar UBIKAR (14 cláusulas)"],
     ]),
-    bloqueRevision("Inventario", [["Elementos", `${s.renglones.length} cargados en ${new Set(s.renglones.map((r) => r.ambiente || "General")).size} ambiente(s)`]]),
+    bloqueRevision("Inventario", [["Elementos", `${s.renglones.length} elemento${s.renglones.length === 1 ? "" : "s"} en ${cantAmbientesRev} ambiente${cantAmbientesRev === 1 ? "" : "s"}`]]),
   );
 }
 
@@ -758,9 +875,9 @@ function restaurarBorrador() {
   $("valorInicial").value = d.valorInicial;
   $("periodicidad").value = d.periodicidad;
   $("deposito").value = d.deposito;
-  $("invSlot").querySelectorAll(".inv__row").forEach((f) => f.remove());
-  d.renglones.forEach((r) => agregarRenglon(r));
-  if (!d.renglones.length) agregarRenglon();
+  $("invSlot").innerHTML = "";
+  d.renglones.forEach((r) => agregarItem(obtenerOCrearGrupo(r.ambiente || "Sin especificar"), r));
+  actualizarInventarioUI();
   actualizarGarantes();
   actualizarDerivados();
   restaurando = false;
@@ -821,11 +938,13 @@ $("prevBtn").addEventListener("click", () => irAPaso(paso - 1));
 $("wizard").addEventListener("input", (e) => {
   UX.alEditar(e.target, $("stepError"));
   pintarFicha();
+  actualizarInventarioUI();
   marcarCambio();
 });
 $("wizard").addEventListener("change", (e) => {
   UX.alEditar(e.target, $("stepError"));
   pintarFicha();
+  actualizarInventarioUI();
   marcarCambio();
 });
 $("wizard").addEventListener("click", programarGuardado);
@@ -859,7 +978,6 @@ document.querySelectorAll(".wz-step").forEach((s, i) => {
 $("otroBtn").addEventListener("click", () => window.location.reload());
 $("addInquilinoBtn").addEventListener("click", () => agregarPersona(inquilinos, $("inquilinosSlot"), CONFIG_INQUILINO));
 $("addGaranteBtn").addEventListener("click", () => agregarPersona(garantes, $("garantesSlot"), CONFIG_GARANTE));
-$("addRenglonBtn").addEventListener("click", () => agregarRenglon());
 $("tipoGarantia").addEventListener("change", actualizarGarantes);
 ["fechaInicio", "duracionMeses", "valorInicial", "deposito"].forEach((id) => $(id).addEventListener("input", actualizarDerivados));
 
