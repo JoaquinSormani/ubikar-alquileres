@@ -356,6 +356,7 @@ function actualizarDerivados() {
     partes.push(`Depósito en garantía: ${dinero.format(deposito)}${depositoTexto === "" ? " (un mes de alquiler)" : ""}.`);
   }
   $("derivados").textContent = partes.join(" ");
+  $("derivados").hidden = partes.length === 0;
 }
 
 // ---------- paso 5: inventario ----------
