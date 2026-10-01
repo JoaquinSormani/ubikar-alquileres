@@ -9,8 +9,15 @@
  * no obligue a loguearse de nuevo en cada paso.
  */
 const CLAVE_SESION = "ubikar.responsable.sesion";
+const CLAVE_NOMBRE = "ubikar.responsable.nombre";
 const USUARIO = "responsable";
 const CLAVE = "ubikar2026";
+
+// Mismo trazo que los iconos de las tarjetas (document/edificio), para que el
+// saludo use el mismo lenguaje visual: sol de dia, atardecer, luna de noche.
+const ICONO_SOL = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="24" cy="24" r="9"/><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9.5 9.5l4.2 4.2M34.3 34.3l4.2 4.2M9.5 38.5l4.2-4.2M34.3 13.7l4.2-4.2"/></svg>';
+const ICONO_ATARDECER = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 32h32"/><path d="M15 32a9 9 0 0 1 18 0"/><path d="M24 10v6M11 20l4.2 4.2M37 20l-4.2 4.2"/></svg>';
+const ICONO_LUNA = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M42 25.58A18 18 0 1 1 22.42 6 14 14 0 0 0 42 25.58Z"/></svg>';
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,9 +29,10 @@ function haySesion() {
   }
 }
 
-function iniciarSesion() {
+function iniciarSesion(nombre) {
   try {
     sessionStorage.setItem(CLAVE_SESION, "1");
+    sessionStorage.setItem(CLAVE_NOMBRE, nombre);
   } catch (err) {
     /* sin almacenamiento: la sesion no persiste entre paginas, pero el login sigue funcionando */
   }
@@ -33,30 +41,49 @@ function iniciarSesion() {
 function cerrarSesion() {
   try {
     sessionStorage.removeItem(CLAVE_SESION);
+    sessionStorage.removeItem(CLAVE_NOMBRE);
   } catch (err) {
     /* nada que borrar */
   }
 }
 
+function nombreGuardado() {
+  try {
+    return sessionStorage.getItem(CLAVE_NOMBRE) || USUARIO;
+  } catch (err) {
+    return USUARIO;
+  }
+}
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// 3 franjas horarias, cada una con su icono: sol de dia, atardecer, luna de noche.
 function saludoSegunHora() {
   const hora = new Date().getHours();
-  if (hora < 12) return "Buenos días";
-  if (hora < 20) return "Buenas tardes";
-  return "Buenas noches";
+  if (hora < 12) return { texto: "Buenos días", icono: ICONO_SOL };
+  if (hora < 20) return { texto: "Buenas tardes", icono: ICONO_ATARDECER };
+  return { texto: "Buenas noches", icono: ICONO_LUNA };
 }
 
 function mostrarInicio() {
   $("loginView").hidden = true;
   $("inicioBar").hidden = false;
   $("inicioView").hidden = false;
-  $("saludoHora").textContent = saludoSegunHora();
+  const saludo = saludoSegunHora();
+  $("saludoHora").textContent = saludo.texto;
+  $("iconoHora").innerHTML = saludo.icono;
+  $("nombreUsuario").textContent = capitalizar(nombreGuardado());
 }
 
 function mostrarLogin() {
   $("inicioBar").hidden = true;
   $("inicioView").hidden = true;
   $("loginView").hidden = false;
-  $("usuarioInput").focus();
+  // preventScroll: el panel de marca es alto en mobile; sin esto, enfocar el campo
+  // scrollea de entrada hasta el formulario y tapa el logo/la frase/el skyline.
+  $("usuarioInput").focus({ preventScroll: true });
 }
 
 $("loginForm").addEventListener("submit", (e) => {
@@ -65,7 +92,7 @@ $("loginForm").addEventListener("submit", (e) => {
   const clave = $("claveInput").value;
   if (usuario === USUARIO && clave === CLAVE) {
     $("loginError").hidden = true;
-    iniciarSesion();
+    iniciarSesion(usuario);
     mostrarInicio();
     return;
   }

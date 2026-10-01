@@ -29,9 +29,12 @@
 
 .login-brand__skyline {
   position: absolute;
-  inset: auto 0 0 0;
-  width: 100%;
-  height: 46%;
+  /* se extiende mas alla del panel y .login-brand recorta (overflow:hidden): asi el
+     desenfoque no deja un borde recto visible en los costados. */
+  inset: auto -30px 0 -30px;
+  width: calc(100% + 60px);
+  height: 50%;
+  filter: blur(3px);
 }
 
 .login-brand__cuerpo {
@@ -177,7 +180,10 @@
 }
 
 .hub-hero__eyebrow {
-  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 14px;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -185,17 +191,55 @@
   color: var(--accent);
 }
 
+.hub-hero__icono-hora {
+  display: flex;
+}
+
+.hub-hero__icono-hora svg {
+  width: 18px;
+  height: 18px;
+}
+
+.hub-hero__identidad {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-hero__avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--wine);
+  color: var(--paper);
+}
+
+.hub-hero__avatar svg {
+  width: 28px;
+  height: 28px;
+}
+
 .hub-hero__titulo {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.9rem, 4.4vw, 2.6rem);
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--wine);
 }
 
+.hub-hero__rol {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
 .hub-hero__sub {
-  margin: 10px 0 0;
+  margin: 16px 0 0;
   color: var(--ink-soft);
   font-size: 1.02rem;
 }

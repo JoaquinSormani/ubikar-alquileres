@@ -17,24 +17,44 @@
 
     <section class="login-brand">
       <svg class="login-brand__skyline" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="0"   y="90"  width="55" height="70"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="70"  y="65"  width="40" height="95"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="120" y="105" width="60" height="55"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="195" y="40"  width="45" height="120" fill="var(--accent)" opacity="0.12"/>
-        <rect x="250" y="85"  width="50" height="75"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="315" y="60"  width="65" height="100" fill="var(--accent)" opacity="0.12"/>
-        <rect x="390" y="100" width="40" height="60"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="440" y="30"  width="55" height="130" fill="var(--accent)" opacity="0.12"/>
-        <rect x="505" y="80"  width="50" height="80"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="565" y="95"  width="35" height="65"  fill="var(--accent)" opacity="0.12"/>
-        <rect x="20"  y="110" width="35" height="50" fill="var(--wine)" opacity="0.16"/>
-        <rect x="90"  y="75"  width="50" height="85" fill="var(--wine)" opacity="0.16"/>
-        <rect x="175" y="120" width="30" height="40" fill="var(--wine)" opacity="0.16"/>
-        <rect x="230" y="95"  width="55" height="65" fill="var(--wine)" opacity="0.16"/>
-        <rect x="310" y="115" width="35" height="45" fill="var(--wine)" opacity="0.16"/>
-        <rect x="370" y="70"  width="60" height="90" fill="var(--wine)" opacity="0.16"/>
-        <rect x="460" y="105" width="40" height="55" fill="var(--wine)" opacity="0.16"/>
-        <rect x="525" y="90"  width="50" height="70" fill="var(--wine)" opacity="0.16"/>
+        <!-- siluetas: casas (cuerpo + techo a dos aguas) y edificios (cuerpo + ventanas) -->
+        <g fill="var(--wine)" opacity="0.26">
+          <rect x="20" y="118" width="50" height="42"/>
+          <polygon points="18,118 45,90 72,118"/>
+          <rect x="95" y="45" width="46" height="115"/>
+          <rect x="165" y="128" width="42" height="32"/>
+          <polygon points="160,128 186,105 212,128"/>
+          <rect x="230" y="65" width="48" height="95"/>
+          <rect x="300" y="133" width="34" height="27"/>
+          <polygon points="296,133 317,114 338,133"/>
+          <rect x="355" y="30" width="46" height="130"/>
+          <rect x="425" y="120" width="46" height="40"/>
+          <polygon points="420,120 448,95 476,120"/>
+          <rect x="495" y="58" width="44" height="102"/>
+          <rect x="555" y="131" width="38" height="29"/>
+          <polygon points="551,131 574,111 597,131"/>
+        </g>
+        <g fill="var(--paper)" opacity="0.45">
+          <rect x="37" y="132" width="16" height="14"/>
+          <rect x="103" y="58" width="7" height="9"/><rect x="117" y="58" width="7" height="9"/>
+          <rect x="103" y="80" width="7" height="9"/><rect x="117" y="80" width="7" height="9"/>
+          <rect x="103" y="102" width="7" height="9"/><rect x="117" y="102" width="7" height="9"/>
+          <rect x="103" y="124" width="7" height="9"/><rect x="117" y="124" width="7" height="9"/>
+          <rect x="178" y="138" width="14" height="12"/>
+          <rect x="238" y="78" width="7" height="9"/><rect x="252" y="78" width="7" height="9"/>
+          <rect x="238" y="100" width="7" height="9"/><rect x="252" y="100" width="7" height="9"/>
+          <rect x="238" y="122" width="7" height="9"/><rect x="252" y="122" width="7" height="9"/>
+          <rect x="309" y="142" width="12" height="10"/>
+          <rect x="363" y="42" width="7" height="9"/><rect x="377" y="42" width="7" height="9"/>
+          <rect x="363" y="66" width="7" height="9"/><rect x="377" y="66" width="7" height="9"/>
+          <rect x="363" y="90" width="7" height="9"/><rect x="377" y="90" width="7" height="9"/>
+          <rect x="363" y="114" width="7" height="9"/><rect x="377" y="114" width="7" height="9"/>
+          <rect x="440" y="132" width="16" height="14"/>
+          <rect x="503" y="70" width="7" height="9"/><rect x="517" y="70" width="7" height="9"/>
+          <rect x="503" y="92" width="7" height="9"/><rect x="517" y="92" width="7" height="9"/>
+          <rect x="503" y="114" width="7" height="9"/><rect x="517" y="114" width="7" height="9"/>
+          <rect x="566" y="140" width="14" height="12"/>
+        </g>
       </svg>
 
       <div class="login-brand__cuerpo">
@@ -80,8 +100,22 @@
 
   <div class="inicio" id="inicioView" hidden>
     <section class="hub-hero">
-      <p class="hub-hero__eyebrow" id="saludoHora">Hola</p>
-      <h1 class="hub-hero__titulo">Responsable de UBIKAR</h1>
+      <p class="hub-hero__eyebrow">
+        <span class="hub-hero__icono-hora" id="iconoHora" aria-hidden="true"></span>
+        <span id="saludoHora">Hola</span>
+      </p>
+      <div class="hub-hero__identidad">
+        <span class="hub-hero__avatar" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="24" cy="17" r="8"/>
+            <path d="M8 41c0-9.4 7.2-17 16-17s16 7.6 16 17"/>
+          </svg>
+        </span>
+        <div>
+          <h1 class="hub-hero__titulo" id="nombreUsuario">Responsable</h1>
+          <p class="hub-hero__rol">Responsable de UBIKAR</p>
+        </div>
+      </div>
       <p class="hub-hero__sub">Elegí qué querés hacer para empezar.</p>
     </section>
 
