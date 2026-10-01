@@ -9,56 +9,112 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal.css">
 <link rel="stylesheet" href="inicio.css">
-<link rel="stylesheet" href="vidrio.css">
 </head>
 <body>
 
-  <main class="access access--hero" id="loginView">
-    <div class="access__mark access__mark--grande wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
-    <p class="access__eyebrow">Inmobiliaria UBIKAR</p>
-    <h1 class="access__title">Panel del Responsable</h1>
-    <p class="access__hint">Ingresá para gestionar los contratos y las propiedades de UBIKAR.</p>
+  <!-- ===================== LOGIN: panel de marca + formulario ===================== -->
+  <main class="login-split" id="loginView">
 
-    <form class="access__form" id="loginForm" novalidate>
-      <label class="field">
-        <span class="field__label">Usuario</span>
-        <input class="field__input" type="text" id="usuarioInput" autocomplete="username" required>
-      </label>
-      <label class="field">
-        <span class="field__label">Contraseña</span>
-        <input class="field__input" type="password" id="claveInput" autocomplete="current-password" required>
-      </label>
-      <button class="btn btn--primary" type="submit">
-        <span>Ingresar</span>
-      </button>
-      <p class="access__error" id="loginError" role="alert" hidden></p>
-    </form>
+    <section class="login-brand">
+      <svg class="login-brand__skyline" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0"   y="90"  width="55" height="70"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="70"  y="65"  width="40" height="95"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="120" y="105" width="60" height="55"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="195" y="40"  width="45" height="120" fill="var(--accent)" opacity="0.12"/>
+        <rect x="250" y="85"  width="50" height="75"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="315" y="60"  width="65" height="100" fill="var(--accent)" opacity="0.12"/>
+        <rect x="390" y="100" width="40" height="60"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="440" y="30"  width="55" height="130" fill="var(--accent)" opacity="0.12"/>
+        <rect x="505" y="80"  width="50" height="80"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="565" y="95"  width="35" height="65"  fill="var(--accent)" opacity="0.12"/>
+        <rect x="20"  y="110" width="35" height="50" fill="var(--wine)" opacity="0.16"/>
+        <rect x="90"  y="75"  width="50" height="85" fill="var(--wine)" opacity="0.16"/>
+        <rect x="175" y="120" width="30" height="40" fill="var(--wine)" opacity="0.16"/>
+        <rect x="230" y="95"  width="55" height="65" fill="var(--wine)" opacity="0.16"/>
+        <rect x="310" y="115" width="35" height="45" fill="var(--wine)" opacity="0.16"/>
+        <rect x="370" y="70"  width="60" height="90" fill="var(--wine)" opacity="0.16"/>
+        <rect x="460" y="105" width="40" height="55" fill="var(--wine)" opacity="0.16"/>
+        <rect x="525" y="90"  width="50" height="70" fill="var(--wine)" opacity="0.16"/>
+      </svg>
 
-    <p class="access__demo">Usuario de prueba: <code>responsable</code> · Contraseña: <code>ubikar2026</code></p>
+      <div class="login-brand__cuerpo">
+        <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="login-brand__logo">
+        <blockquote class="login-brand__frase">Un servicio ágil, transparente y disponible las 24&nbsp;horas, tanto para propietarios como para inquilinos.</blockquote>
+        <p class="login-brand__pie">Sistema de gestión de alquileres</p>
+      </div>
+    </section>
+
+    <section class="login-form-panel">
+      <div class="login-form-panel__inner">
+        <p class="access__eyebrow">Panel del Responsable</p>
+        <h1 class="access__title">Ingresá a tu cuenta</h1>
+        <p class="access__hint">Gestioná los contratos y las propiedades de UBIKAR.</p>
+
+        <form class="access__form" id="loginForm" novalidate>
+          <label class="field">
+            <span class="field__label">Usuario</span>
+            <input class="field__input" type="text" id="usuarioInput" autocomplete="username" required>
+          </label>
+          <label class="field">
+            <span class="field__label">Contraseña</span>
+            <input class="field__input" type="password" id="claveInput" autocomplete="current-password" required>
+          </label>
+          <button class="btn btn--primary" type="submit">
+            <span>Ingresar</span>
+          </button>
+          <p class="access__error" id="loginError" role="alert" hidden></p>
+        </form>
+
+        <p class="access__demo">Usuario de prueba: <code>responsable</code> · Contraseña: <code>ubikar2026</code></p>
+      </div>
+    </section>
   </main>
 
-  <div class="portal" id="inicioView" hidden>
-    <header class="portal__header">
-      <a href="index.html" class="wz__logo" aria-label="Volver al inicio">
-        <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
-      </a>
-      <button class="btn btn--ghost" id="logoutBtn" type="button">Cerrar sesión</button>
-    </header>
+  <!-- ===================== INICIO: barra + panel con las 2 opciones ===================== -->
+  <header class="app-bar" id="inicioBar" hidden>
+    <a href="index.html" class="wz__logo" aria-label="Volver al inicio">
+      <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo">
+    </a>
+    <button class="btn btn--ghost" id="logoutBtn" type="button">Cerrar sesión</button>
+  </header>
 
+  <div class="inicio" id="inicioView" hidden>
     <section class="hub-hero">
       <p class="hub-hero__eyebrow" id="saludoHora">Hola</p>
       <h1 class="hub-hero__titulo">Responsable de UBIKAR</h1>
       <p class="hub-hero__sub">Elegí qué querés hacer para empezar.</p>
     </section>
 
-    <div class="role-choice hub">
-      <a class="role-choice__option" href="contrato.html">
-        <span class="role-choice__label">Nuevo contrato de alquiler</span>
-        <span class="role-choice__hint">Cargar un contrato, sus partes, condiciones e inventario</span>
+    <div class="hub-grid">
+      <a class="hub-card" href="contrato.html">
+        <span class="hub-card__icono" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 6h14l8 8v26a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/>
+            <path d="M28 6v8h8"/>
+            <path d="M17 25h14M17 31h14M17 37h8"/>
+          </svg>
+        </span>
+        <span class="hub-card__texto">
+          <span class="hub-card__titulo">Nuevo contrato de alquiler</span>
+          <span class="hub-card__desc">Cargar un contrato, sus partes, condiciones e inventario</span>
+        </span>
+        <span class="hub-card__ir">Ir <span aria-hidden="true">→</span></span>
       </a>
-      <a class="role-choice__option" href="propiedad.html">
-        <span class="role-choice__label">Registrar propiedad</span>
-        <span class="role-choice__hint">Dar de alta una propiedad y a su propietario</span>
+
+      <a class="hub-card" href="propiedad.html">
+        <span class="hub-card__icono" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 40V18l8-6 2 2v26"/>
+            <path d="M20 40V14l6-6 6 6v26"/>
+            <path d="M32 40V22l6-4v22"/>
+            <path d="M6 40h36"/>
+          </svg>
+        </span>
+        <span class="hub-card__texto">
+          <span class="hub-card__titulo">Registrar propiedad</span>
+          <span class="hub-card__desc">Dar de alta una propiedad y a su propietario</span>
+        </span>
+        <span class="hub-card__ir">Ir <span aria-hidden="true">→</span></span>
       </a>
     </div>
   </div>

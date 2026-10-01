@@ -47,11 +47,13 @@ function saludoSegunHora() {
 
 function mostrarInicio() {
   $("loginView").hidden = true;
+  $("inicioBar").hidden = false;
   $("inicioView").hidden = false;
   $("saludoHora").textContent = saludoSegunHora();
 }
 
 function mostrarLogin() {
+  $("inicioBar").hidden = true;
   $("inicioView").hidden = true;
   $("loginView").hidden = false;
   $("usuarioInput").focus();
