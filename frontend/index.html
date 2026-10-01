@@ -8,86 +8,33 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="vidrio.css">
 <link rel="stylesheet" href="inicio.css">
 </head>
 <body>
 
-  <!-- ===================== LOGIN: panel de marca + formulario ===================== -->
-  <main class="login-split" id="loginView">
+  <!-- ===================== LOGIN: mismo patron "access" que portal.html ===================== -->
+  <main class="access" id="loginView">
+    <div class="access__mark wordmark"><img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="brand-logo"></div>
+    <h1 class="access__title">Panel del Responsable</h1>
+    <p class="access__hint">Ingresá para gestionar los contratos y las propiedades de UBIKAR.</p>
 
-    <section class="login-brand">
-      <svg class="login-brand__skyline" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true">
-        <!-- siluetas: casas (cuerpo + techo a dos aguas) y edificios (cuerpo + ventanas) -->
-        <g fill="var(--wine)" opacity="0.26">
-          <rect x="20" y="118" width="50" height="42"/>
-          <polygon points="18,118 45,90 72,118"/>
-          <rect x="95" y="45" width="46" height="115"/>
-          <rect x="165" y="128" width="42" height="32"/>
-          <polygon points="160,128 186,105 212,128"/>
-          <rect x="230" y="65" width="48" height="95"/>
-          <rect x="300" y="133" width="34" height="27"/>
-          <polygon points="296,133 317,114 338,133"/>
-          <rect x="355" y="30" width="46" height="130"/>
-          <rect x="425" y="120" width="46" height="40"/>
-          <polygon points="420,120 448,95 476,120"/>
-          <rect x="495" y="58" width="44" height="102"/>
-          <rect x="555" y="131" width="38" height="29"/>
-          <polygon points="551,131 574,111 597,131"/>
-        </g>
-        <g fill="var(--paper)" opacity="0.45">
-          <rect x="37" y="132" width="16" height="14"/>
-          <rect x="103" y="58" width="7" height="9"/><rect x="117" y="58" width="7" height="9"/>
-          <rect x="103" y="80" width="7" height="9"/><rect x="117" y="80" width="7" height="9"/>
-          <rect x="103" y="102" width="7" height="9"/><rect x="117" y="102" width="7" height="9"/>
-          <rect x="103" y="124" width="7" height="9"/><rect x="117" y="124" width="7" height="9"/>
-          <rect x="178" y="138" width="14" height="12"/>
-          <rect x="238" y="78" width="7" height="9"/><rect x="252" y="78" width="7" height="9"/>
-          <rect x="238" y="100" width="7" height="9"/><rect x="252" y="100" width="7" height="9"/>
-          <rect x="238" y="122" width="7" height="9"/><rect x="252" y="122" width="7" height="9"/>
-          <rect x="309" y="142" width="12" height="10"/>
-          <rect x="363" y="42" width="7" height="9"/><rect x="377" y="42" width="7" height="9"/>
-          <rect x="363" y="66" width="7" height="9"/><rect x="377" y="66" width="7" height="9"/>
-          <rect x="363" y="90" width="7" height="9"/><rect x="377" y="90" width="7" height="9"/>
-          <rect x="363" y="114" width="7" height="9"/><rect x="377" y="114" width="7" height="9"/>
-          <rect x="440" y="132" width="16" height="14"/>
-          <rect x="503" y="70" width="7" height="9"/><rect x="517" y="70" width="7" height="9"/>
-          <rect x="503" y="92" width="7" height="9"/><rect x="517" y="92" width="7" height="9"/>
-          <rect x="503" y="114" width="7" height="9"/><rect x="517" y="114" width="7" height="9"/>
-          <rect x="566" y="140" width="14" height="12"/>
-        </g>
-      </svg>
+    <form class="access__form" id="loginForm" novalidate>
+      <label class="field">
+        <span class="field__label">Usuario</span>
+        <input class="field__input" type="text" id="usuarioInput" autocomplete="username" required>
+      </label>
+      <label class="field">
+        <span class="field__label">Contraseña</span>
+        <input class="field__input" type="password" id="claveInput" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn--primary" type="submit">
+        <span>Ingresar</span>
+      </button>
+      <p class="access__error" id="loginError" role="alert" hidden></p>
+    </form>
 
-      <div class="login-brand__cuerpo">
-        <img src="assets/logo-ubikar.png" alt="UBIKAR Propiedades" class="login-brand__logo">
-        <blockquote class="login-brand__frase">Un servicio ágil, transparente y disponible las 24&nbsp;horas, tanto para propietarios como para inquilinos.</blockquote>
-        <p class="login-brand__pie">Sistema de gestión de alquileres</p>
-      </div>
-    </section>
-
-    <section class="login-form-panel">
-      <div class="login-form-panel__inner">
-        <p class="access__eyebrow">Panel del Responsable</p>
-        <h1 class="access__title">Ingresá a tu cuenta</h1>
-        <p class="access__hint">Gestioná los contratos y las propiedades de UBIKAR.</p>
-
-        <form class="access__form" id="loginForm" novalidate>
-          <label class="field">
-            <span class="field__label">Usuario</span>
-            <input class="field__input" type="text" id="usuarioInput" autocomplete="username" required>
-          </label>
-          <label class="field">
-            <span class="field__label">Contraseña</span>
-            <input class="field__input" type="password" id="claveInput" autocomplete="current-password" required>
-          </label>
-          <button class="btn btn--primary" type="submit">
-            <span>Ingresar</span>
-          </button>
-          <p class="access__error" id="loginError" role="alert" hidden></p>
-        </form>
-
-        <p class="access__demo">Usuario de prueba: <code>responsable</code> · Contraseña: <code>ubikar2026</code></p>
-      </div>
-    </section>
+    <p class="access__demo">Usuario de prueba: <code>responsable</code> · Contraseña: <code>ubikar2026</code></p>
   </main>
 
   <!-- ===================== INICIO: barra + panel con las 2 opciones ===================== -->

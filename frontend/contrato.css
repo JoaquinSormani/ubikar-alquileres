@@ -38,11 +38,15 @@
   transform: scale(0.96);
 }
 
+/* mismo boton "ghost" redondeado que "Cerrar sesion" en el index, para que
+   el link explicito de vuelta se vea como una accion y no como texto suelto. */
 .wz__volver {
+  display: inline-block;
   margin-left: auto;
   flex-shrink: 0;
   white-space: nowrap;
   align-self: center;
+  text-decoration: none;
 }
 
 .wz__title {
