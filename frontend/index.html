@@ -46,6 +46,8 @@
   </header>
 
   <div class="inicio" id="inicioView" hidden>
+   <div class="inicio__layout">
+    <div class="inicio__principal">
     <section class="hub-hero">
       <p class="hub-hero__eyebrow">
         <span class="hub-hero__icono-hora" id="iconoHora" aria-hidden="true"></span>
@@ -98,6 +100,18 @@
         <span class="hub-card__ir">Ir <span aria-hidden="true">→</span></span>
       </a>
     </div>
+    </div>
+
+    <aside class="reel" aria-label="Video de UBIKAR">
+      <div class="reel__marco">
+        <video class="reel__video" id="reelVideo" src="assets/reel-ubikar.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <button class="reel__sonido" id="reelSonido" type="button" aria-label="Activar sonido" aria-pressed="false">
+          <svg class="reel__ico reel__ico--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>
+          <svg class="reel__ico reel__ico--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        </button>
+      </div>
+    </aside>
+   </div>
   </div>
 
 <script src="inicio.js"></script>

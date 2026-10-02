@@ -86,6 +86,14 @@ function mostrarLogin() {
   $("usuarioInput").focus({ preventScroll: true });
 }
 
+// El reel arranca mudo (los navegadores bloquean el autoplay con sonido); el boton lo activa.
+$("reelSonido").addEventListener("click", () => {
+  const video = $("reelVideo");
+  video.muted = !video.muted;
+  $("reelSonido").setAttribute("aria-pressed", String(!video.muted));
+  $("reelSonido").setAttribute("aria-label", video.muted ? "Activar sonido" : "Silenciar");
+});
+
 $("loginForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const usuario = $("usuarioInput").value.trim().toLowerCase();
