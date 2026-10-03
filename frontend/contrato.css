@@ -27,11 +27,21 @@
 .wz__logo {
   display: block;
   border-radius: 12px;
-  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+  transition: background-color 300ms var(--ease-out), transform 300ms var(--ease-out);
 }
 
+.wz__logo .brand-logo {
+  transition: filter 300ms var(--ease-out);
+}
+
+/* mismo hover que .ubk-logo del index: halo suave detras + leve levantamiento */
 .wz__logo:hover {
-  opacity: 0.85;
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.wz__logo:hover .brand-logo {
+  filter: brightness(1.05) saturate(1.1);
 }
 
 .wz__logo:active {
@@ -837,7 +847,8 @@ a.btn {
   .exito {
     animation-duration: 1ms;
   }
-  .chip:active {
+  .chip:active,
+  .wz__logo:hover {
     transform: none;
   }
 }
