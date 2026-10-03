@@ -10,8 +10,13 @@
  */
 const CLAVE_SESION = "ubikar.responsable.sesion";
 const CLAVE_NOMBRE = "ubikar.responsable.nombre";
-const USUARIO = "responsable";
+const NOMBRE_USUARIO = "Joaquin Sormani";
 const CLAVE = "ubikar2026";
+
+// Se compara sin importar mayusculas, tildes ni espacios de mas ("joaquín  SORMANI" entra igual).
+function normalizar(texto) {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().replace(/\s+/g, " ").toLowerCase();
+}
 
 // Mismo trazo que los iconos de las tarjetas (document/edificio), para que el
 // saludo use el mismo lenguaje visual: sol de dia, atardecer, luna de noche.
@@ -49,14 +54,14 @@ function cerrarSesion() {
 
 function nombreGuardado() {
   try {
-    return sessionStorage.getItem(CLAVE_NOMBRE) || USUARIO;
+    return sessionStorage.getItem(CLAVE_NOMBRE) || NOMBRE_USUARIO;
   } catch (err) {
-    return USUARIO;
+    return NOMBRE_USUARIO;
   }
 }
 
-function capitalizar(texto) {
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
+function iniciales(nombre) {
+  return nombre.split(" ").map((p) => p.charAt(0)).join("").slice(0, 2).toUpperCase();
 }
 
 // 3 franjas horarias, cada una con su icono: sol de dia, atardecer, luna de noche.
@@ -72,11 +77,11 @@ function mostrarInicio() {
   $("inicioBar").hidden = false;
   $("inicioView").hidden = false;
   const saludo = saludoSegunHora();
-  const nombre = capitalizar(nombreGuardado());
-  $("saludoHora").textContent = saludo.texto + ", " + nombre;
+  const nombre = nombreGuardado();
+  $("saludoHora").textContent = saludo.texto + ", " + nombre.split(" ")[0];
   $("iconoHora").innerHTML = saludo.icono;
   $("nombreUsuario").textContent = nombre;
-  $("avatarInicial").textContent = nombre.charAt(0).toUpperCase();
+  $("avatarInicial").textContent = iniciales(nombre);
 }
 
 function mostrarError(mensaje) {
@@ -111,11 +116,11 @@ $("reelSonido").addEventListener("click", () => {
 
 $("loginForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  const usuario = $("usuarioInput").value.trim().toLowerCase();
+  const usuario = normalizar($("usuarioInput").value);
   const clave = $("claveInput").value;
-  if (usuario === USUARIO && clave === CLAVE) {
+  if (usuario === normalizar(NOMBRE_USUARIO) && clave === CLAVE) {
     limpiarError();
-    iniciarSesion(usuario);
+    iniciarSesion(NOMBRE_USUARIO);
     mostrarInicio();
     return;
   }

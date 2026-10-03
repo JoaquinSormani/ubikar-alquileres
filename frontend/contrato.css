@@ -18,8 +18,15 @@
 }
 
 .wz__header .brand-logo {
-  width: 72px;
+  height: 56px;
+  width: auto;
   flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .wz__header .brand-logo {
+    height: 48px;
+  }
 }
 
 /* Convencion: el logo en la esquina lleva al inicio. Se suma un link explicito
