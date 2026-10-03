@@ -72,9 +72,24 @@ function mostrarInicio() {
   $("inicioBar").hidden = false;
   $("inicioView").hidden = false;
   const saludo = saludoSegunHora();
-  $("saludoHora").textContent = saludo.texto;
+  const nombre = capitalizar(nombreGuardado());
+  $("saludoHora").textContent = saludo.texto + ", " + nombre;
   $("iconoHora").innerHTML = saludo.icono;
-  $("nombreUsuario").textContent = capitalizar(nombreGuardado());
+  $("nombreUsuario").textContent = nombre;
+  $("avatarInicial").textContent = nombre.charAt(0).toUpperCase();
+}
+
+function mostrarError(mensaje) {
+  $("loginError").textContent = mensaje;
+  $("loginError").hidden = false;
+  $("claveCampo").classList.add("ubk-campo--error");
+  $("claveInput").setAttribute("aria-invalid", "true");
+}
+
+function limpiarError() {
+  $("loginError").hidden = true;
+  $("claveCampo").classList.remove("ubk-campo--error");
+  $("claveInput").removeAttribute("aria-invalid");
 }
 
 function mostrarLogin() {
@@ -99,13 +114,12 @@ $("loginForm").addEventListener("submit", (e) => {
   const usuario = $("usuarioInput").value.trim().toLowerCase();
   const clave = $("claveInput").value;
   if (usuario === USUARIO && clave === CLAVE) {
-    $("loginError").hidden = true;
+    limpiarError();
     iniciarSesion(usuario);
     mostrarInicio();
     return;
   }
-  $("loginError").textContent = "Usuario o contraseña incorrectos.";
-  $("loginError").hidden = false;
+  mostrarError("Usuario o contraseña incorrectos. Revisá los datos e intentá de nuevo.");
   $("claveInput").value = "";
   $("claveInput").focus();
 });
@@ -113,6 +127,7 @@ $("loginForm").addEventListener("submit", (e) => {
 $("logoutBtn").addEventListener("click", () => {
   cerrarSesion();
   $("loginForm").reset();
+  limpiarError();
   mostrarLogin();
 });
 

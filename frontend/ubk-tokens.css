@@ -1,0 +1,41 @@
+/* Tokens del sistema de diseño de UBIKAR (project/tokens.json). Van bajo .ubk (clase del <body>)
+   y no en :root para que ganen sobre las variables de vidrio.css con el mismo nombre
+   (--vidrio, --vidrio-borde, --linea), sin importar el orden de carga. */
+.ubk {
+  --crema: #f2ebe3;
+  --crema-alta: #fbf7f2;
+  --cafe: #40312f;
+  --cafe-suave: #6b5a55;
+  --terracota: #a8583f;
+  --terracota-texto: #8f4630;
+  --terracota-suave: #efddd2;
+  --vino: #3f1521;
+  --marino: #2e4157;
+  --sobre-acento: #ffffff;
+  --vidrio: rgba(255, 251, 246, 0.78);
+  --vidrio-borde: rgba(255, 255, 255, 0.7);
+  --linea: #8a7a74;
+  --ok: #3f6b4f;
+  --ok-fondo: #e3ede5;
+  --error: #8c2a3b;
+  --error-fondo: #f6e4e4;
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --radio-campo: 12px;
+  --radio-icono: 16px;
+  --radio-tarjeta: 24px;
+  --radio-pildora: 999px;
+
+  --sombra-vidrio: 0 1px 2px rgba(64, 49, 47, 0.06), 0 8px 24px rgba(64, 49, 47, 0.1);
+  --sombra-elevada: 0 2px 4px rgba(64, 49, 47, 0.08), 0 16px 40px rgba(64, 49, 47, 0.16);
+}

@@ -1,44 +1,23 @@
-/* Panel del Responsable: ahora SI usa vidrio.css, igual que contrato.html y propiedad.html,
-   para que el login y el inicio compartan el mismo lenguaje visual (fondo desenfocado +
-   superficies de vidrio) que el resto del sistema. Esta hoja solo pisa el fondo de vidrio.css
-   (manchas de color) por una foto real, y agrega el layout propio del inicio (barra + tarjetas). */
+/* Panel del Responsable. Los componentes (campos, botones, encabezado, tarjetas de acceso, vidrio)
+   vienen del sistema de diseño: ubk-tokens.css + ubk.css. Esta hoja solo pone lo propio de la
+   pantalla: la foto de fondo, la entrada animada de las vistas y el reel. */
 
-/* Mismo motivo que en contrato.css: sin este !important, alternar "hidden" por JS no
-   ocultaria .app-bar/.inicio (sus "display" fijados ganan por origen de cascada). */
+/* Sin este !important, alternar "hidden" por JS no oculta los elementos cuyo "display" se
+   fija en una hoja de autor (ganan por origen de cascada al display:none del navegador). */
 [hidden] {
   display: none !important;
 }
 
-/* ---------- Fondo: la misma foto real en todas las vistas del index ---------- */
+/* ---------- Fondo: foto real desenfocada con velo crema, igual en login e inicio ---------- */
 
 body::before {
   background:
-    linear-gradient(165deg, rgba(248, 241, 234, 0.52) 0%, rgba(240, 227, 216, 0.6) 55%, rgba(234, 217, 204, 0.74) 100%),
+    linear-gradient(165deg, rgba(242, 235, 227, 0.6) 0%, rgba(242, 235, 227, 0.62) 100%),
     url("assets/fondo-toscana.jpg") center 60% / cover no-repeat;
   filter: blur(22px) saturate(108%);
 }
 
-/* ---------- Login: mismo patron "access" centrado que portal.html ---------- */
-
-.access__mark .brand-logo {
-  width: 108px;
-}
-
-/* ---------- Inicio: barra de ancho completo + tarjetas grandes ---------- */
-
-.app-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 32px;
-  background: var(--vidrio);
-  -webkit-backdrop-filter: var(--desenfoque);
-  backdrop-filter: var(--desenfoque);
-  border-bottom: 1px solid var(--vidrio-borde);
-  opacity: 0;
-  animation: fadeIn 240ms var(--ease-out) forwards;
-}
+/* ---------- Entrada de las vistas: fade + 6px, 300ms ---------- */
 
 @keyframes fadeIn {
   to {
@@ -46,41 +25,63 @@ body::before {
   }
 }
 
-/* mismo logo-vuelve-al-inicio que usan contrato.html y propiedad.html */
-.wz__logo {
-  display: block;
-  border-radius: 12px;
-  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+#inicioBar {
+  opacity: 0;
+  animation: fadeIn 240ms var(--ease-out) forwards;
 }
 
-.wz__logo:hover {
-  opacity: 0.85;
+.ubk-inicio {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: portalIn 300ms var(--ease-out) 60ms forwards;
 }
 
-.wz__logo:active {
-  transform: scale(0.96);
+@media (prefers-reduced-motion: reduce) {
+  .access,
+  #inicioBar,
+  .ubk-inicio {
+    animation-duration: 1ms;
+    animation-delay: 0s;
+  }
 }
 
-.app-bar .wz__logo .brand-logo {
-  width: 48px;
+/* ---------- Login ---------- */
+
+.access__mark .brand-logo {
+  width: 108px;
 }
 
-/* Reel vertical (9:16) al costado de las opciones; en pantallas angostas pasa debajo */
-.inicio__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 36px;
-  align-items: start;
+.access__title {
+  margin-bottom: var(--space-2);
 }
 
-.reel__marco {
+.access .ubk-campo {
+  text-align: left;
+}
+
+/* ---------- Inicio ---------- */
+
+.hub-saludo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.hub-saludo__icono {
+  display: flex;
+}
+
+.hub-saludo__icono svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Reel vertical 9:16: marco .ubk-reel del sistema + video y boton de sonido ---------- */
+
+.ubk-reel {
   position: relative;
-  aspect-ratio: 9 / 16;
-  overflow: hidden;
-  border-radius: 28px;
-  background: var(--wine);
+  padding: 0;
   border: 1px solid var(--vidrio-borde);
-  box-shadow: var(--vidrio-sombra);
 }
 
 .reel__video {
@@ -96,13 +97,13 @@ body::before {
   bottom: 12px;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   border-radius: 50%;
   color: #fff;
-  background: rgba(32, 12, 18, 0.5);
+  background: rgba(32, 12, 18, 0.55);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   cursor: pointer;
@@ -110,7 +111,7 @@ body::before {
 }
 
 .reel__sonido:hover {
-  background: rgba(32, 12, 18, 0.72);
+  background: rgba(32, 12, 18, 0.75);
 }
 
 .reel__sonido:active {
@@ -129,188 +130,4 @@ body::before {
 
 .reel__sonido[aria-pressed="true"] .reel__ico--on {
   display: block;
-}
-
-@media (max-width: 900px) {
-  .inicio__layout {
-    grid-template-columns: 1fr;
-  }
-  .reel {
-    width: min(100%, 280px);
-    margin: 8px auto 0;
-  }
-}
-
-.inicio {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 36px 28px 64px;
-  opacity: 0;
-  transform: translateY(6px);
-  animation: portalIn 320ms var(--ease-out) 60ms forwards;
-}
-
-.hub-hero {
-  position: relative;
-  padding-bottom: 28px;
-}
-
-.hub-hero__eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0 0 14px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-texto);
-}
-
-.hub-hero__icono-hora {
-  display: flex;
-}
-
-.hub-hero__icono-hora svg {
-  width: 18px;
-  height: 18px;
-}
-
-.hub-hero__identidad {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.hub-hero__avatar {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--wine);
-  color: var(--paper);
-  box-shadow: 0 8px 18px -8px rgba(63, 21, 33, 0.5);
-}
-
-.hub-hero__avatar svg {
-  width: 28px;
-  height: 28px;
-}
-
-.hub-hero__titulo {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.7rem, 4vw, 2.3rem);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--wine);
-}
-
-.hub-hero__rol {
-  margin: 2px 0 0;
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.hub-hero__sub {
-  margin: 16px 0 0;
-  color: var(--ink);
-  font-size: 1.02rem;
-}
-
-.hub-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-/* tarjetas de vidrio, igual que .wz-step en contrato.html */
-.hub-card {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  min-height: 230px;
-  padding: 30px 28px;
-  text-decoration: none;
-  color: inherit;
-  background: var(--vidrio);
-  -webkit-backdrop-filter: var(--desenfoque);
-  backdrop-filter: var(--desenfoque);
-  border: 1px solid var(--vidrio-borde);
-  border-radius: 24px;
-  box-shadow: var(--vidrio-sombra);
-  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
-}
-
-.hub-card:hover {
-  transform: translateY(-3px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 20px 36px -16px rgba(168, 88, 63, 0.4);
-}
-
-.hub-card:active {
-  transform: translateY(-1px) scale(0.99);
-}
-
-.hub-card__icono {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: var(--accent-soft);
-  color: var(--accent-texto);
-}
-
-.hub-card__icono svg {
-  width: 26px;
-  height: 26px;
-}
-
-.hub-card__texto {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.hub-card__titulo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--ink);
-}
-
-.hub-card__desc {
-  font-size: 0.92rem;
-  color: var(--ink-soft);
-  line-height: 1.45;
-}
-
-.hub-card__ir {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--accent-texto);
-}
-
-.hub-card__ir span {
-  transition: transform 180ms var(--ease-out);
-}
-
-.hub-card:hover .hub-card__ir span {
-  transform: translateX(3px);
-}
-
-@media (max-width: 560px) {
-  .app-bar {
-    padding: 14px 20px;
-  }
-  .inicio {
-    padding: 28px 20px 48px;
-  }
 }
