@@ -44,7 +44,8 @@
 .wz__logo:hover .brand-logo,
 .wz__logo:focus-visible .brand-logo {
   transform: translateY(-1px) scale(1.04);
-  filter: brightness(1.08) drop-shadow(0 2px 10px rgba(168, 88, 63, 0.35));
+  /* luz clara y calida: sobre este fondo rosado un resplandor terracota se ve como mancha */
+  filter: brightness(1.06) drop-shadow(0 0 6px rgba(255, 252, 247, 0.95)) drop-shadow(0 0 16px rgba(255, 240, 222, 0.8));
 }
 
 .wz__logo:active .brand-logo {
