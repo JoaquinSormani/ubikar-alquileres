@@ -26,26 +26,28 @@
    al lado (wz__volver) porque no todos reconocen esa convencion a simple vista. */
 .wz__logo {
   display: block;
-  border-radius: 12px;
-  transition: background-color 300ms var(--ease-out), transform 300ms var(--ease-out);
+  border-radius: 16px;
+  transition: background-color 300ms var(--ease-out);
 }
 
 .wz__logo .brand-logo {
-  transition: filter 300ms var(--ease-out);
+  transition: transform 300ms var(--ease-out), filter 300ms var(--ease-out);
 }
 
-/* mismo hover que .ubk-logo del index: halo suave detras + leve levantamiento */
-.wz__logo:hover {
+/* mismo hover que .ubk-logo del index: halo detras, el logo sube, crece y gana resplandor */
+.wz__logo:hover,
+.wz__logo:focus-visible {
   background: var(--accent-soft);
-  transform: translateY(-1px);
 }
 
-.wz__logo:hover .brand-logo {
-  filter: brightness(1.05) saturate(1.1);
+.wz__logo:hover .brand-logo,
+.wz__logo:focus-visible .brand-logo {
+  transform: translateY(-1px) scale(1.04);
+  filter: brightness(1.08) drop-shadow(0 2px 10px rgba(168, 88, 63, 0.35));
 }
 
-.wz__logo:active {
-  transform: scale(0.96);
+.wz__logo:active .brand-logo {
+  transform: scale(0.98);
 }
 
 /* mismo boton "ghost" redondeado que "Cerrar sesion" en el index, para que
@@ -847,9 +849,12 @@ a.btn {
   .exito {
     animation-duration: 1ms;
   }
-  .chip:active,
-  .wz__logo:hover {
+  .chip:active {
     transform: none;
+  }
+  .wz__logo .brand-logo {
+    transition: none;
+    transform: none !important;
   }
 }
 

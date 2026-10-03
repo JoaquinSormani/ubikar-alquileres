@@ -6,12 +6,12 @@
 .ubk{font:400 16px/24px var(--font-sans);color:var(--cafe);margin:0}
 .ubk-fondo{background:var(--crema);padding:var(--space-6)}
 .ubk :focus-visible{outline:3px solid var(--terracota);outline-offset:2px}
-.ubk-logo{display:inline-flex;border-radius:var(--radio-campo);transition:background-color .3s ease-out,transform .3s ease-out}
-.ubk-logo img{display:block;height:56px;width:auto;transition:filter .3s ease-out}
-/* hover suave del sistema: halo terracota-suave detras del logo (el logo no se recolorea ni lleva sombra) */
-.ubk-logo:hover{background:var(--terracota-suave);transform:translateY(-1px)}
-.ubk-logo:hover img{filter:brightness(1.05) saturate(1.1)}
-.ubk-logo:active{transform:scale(.97)}
+.ubk-logo{display:inline-flex;padding:4px 12px;margin-left:-12px;border-radius:var(--radio-icono);transition:background-color .3s ease-out}
+.ubk-logo img{display:block;height:56px;width:auto;transition:transform .3s ease-out,filter .3s ease-out}
+/* hover: halo terracota-suave detras + el logo sube 1px, crece 4% y gana un resplandor que sigue la silueta */
+.ubk-logo:hover,.ubk-logo:focus-visible{background-color:var(--terracota-suave)}
+.ubk-logo:hover img,.ubk-logo:focus-visible img{transform:translateY(-1px) scale(1.04);filter:brightness(1.08) drop-shadow(0 2px 10px rgba(168,88,63,.35))}
+.ubk-logo:active img{transform:scale(.98)}
 @media (max-width:640px){.ubk-logo img{height:48px}}
 .ubk-wordmark{font:700 22px/1 var(--font-serif);letter-spacing:.02em;text-decoration:none;color:var(--terracota-texto)}
 .ubk-wordmark b{color:var(--marino);font-weight:700}
@@ -94,4 +94,4 @@
 .ubk-entra{animation:ubk-entra .3s ease-out both}
 .ubk-entra:nth-child(2){animation-delay:.06s}.ubk-entra:nth-child(3){animation-delay:.12s}
 @keyframes ubk-entra{from{opacity:0;transform:translateY(6px)}}
-@media (prefers-reduced-motion:reduce){.ubk *,.ubk-entra{animation-duration:1ms!important;animation-delay:0s!important;transition:none!important}.ubk-acceso:hover,.ubk-logo:hover,.ubk-logo:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.ubk *,.ubk-entra{animation-duration:1ms!important;animation-delay:0s!important;transition:none!important}.ubk-acceso:hover{transform:none}.ubk-logo img{transition:none;transform:none!important}}
