@@ -27,19 +27,13 @@
 .wz__logo {
   display: block;
   border-radius: 16px;
-  transition: background-color 300ms var(--ease-out);
 }
 
 .wz__logo .brand-logo {
   transition: transform 300ms var(--ease-out), filter 300ms var(--ease-out);
 }
 
-/* mismo hover que .ubk-logo del index: halo detras, el logo sube, crece y gana resplandor */
-.wz__logo:hover,
-.wz__logo:focus-visible {
-  background: var(--accent-soft);
-}
-
+/* mismo hover que .ubk-logo del index: el logo sube, crece y gana resplandor */
 .wz__logo:hover .brand-logo,
 .wz__logo:focus-visible .brand-logo {
   transform: translateY(-1px) scale(1.04);

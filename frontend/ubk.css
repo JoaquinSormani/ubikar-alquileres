@@ -6,10 +6,9 @@
 .ubk{font:400 16px/24px var(--font-sans);color:var(--cafe);margin:0}
 .ubk-fondo{background:var(--crema);padding:var(--space-6)}
 .ubk :focus-visible{outline:3px solid var(--terracota);outline-offset:2px}
-.ubk-logo{display:inline-flex;padding:4px 12px;margin-left:-12px;border-radius:var(--radio-icono);transition:background-color .3s ease-out}
+.ubk-logo{display:inline-flex;padding:4px 12px;margin-left:-12px;border-radius:var(--radio-icono)}
 .ubk-logo img{display:block;height:56px;width:auto;transition:transform .3s ease-out,filter .3s ease-out}
-/* hover: halo terracota-suave detras + el logo sube 1px, crece 4% y gana un resplandor que sigue la silueta */
-.ubk-logo:hover,.ubk-logo:focus-visible{background-color:var(--terracota-suave)}
+/* hover: el logo sube 1px, crece 4% y gana un resplandor que sigue la silueta */
 .ubk-logo:hover img,.ubk-logo:focus-visible img{transform:translateY(-1px) scale(1.04);filter:brightness(1.08) drop-shadow(0 2px 10px rgba(168,88,63,.35))}
 .ubk-logo:active img{transform:scale(.98)}
 @media (max-width:640px){.ubk-logo img{height:48px}}
