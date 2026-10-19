@@ -31,6 +31,18 @@ const PRESETS = {
   Living: ["Ventanas", "Puerta de acceso", "Luces", "Tomacorrientes"],
   Dormitorio: ["Placard", "Ventana", "Puerta", "Luces"],
 };
+// Elementos habituales de cada zona (los ambientes típicos y los que se pueden cargar en "Registrar propiedad").
+const ITEMS_POR_ZONA = {
+  ...PRESETS,
+  Comedor: ["Ventanas", "Puerta", "Luces", "Tomacorrientes"],
+  Patio: ["Piso", "Iluminación", "Canillas"],
+  Terraza: ["Piso", "Baranda", "Iluminación"],
+  Balcón: ["Piso", "Baranda", "Puerta"],
+  Cochera: ["Portón", "Piso", "Luces"],
+  Lavadero: ["Pileta", "Grifería", "Tomacorrientes"],
+  Jardín: ["Césped", "Cerco", "Riego"],
+  Quincho: ["Parrilla", "Mesada", "Luces"],
+};
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 const catalogo = { propietarios: [], inquilinos: [], garantes: [], propiedades: [] };
@@ -52,6 +64,13 @@ function el(tag, clase, texto) {
   if (clase) nodo.className = clase;
   if (texto !== undefined) nodo.textContent = texto;
   return nodo;
+}
+
+// Fecha de hoy en hora local (YYYY-MM-DD), para comparar con el valor de <input type="date">.
+function hoyISO() {
+  const h = new Date();
+  const dos = (n) => String(n).padStart(2, "0");
+  return `${h.getFullYear()}-${dos(h.getMonth() + 1)}-${dos(h.getDate())}`;
 }
 
 function soloDigitos(valor) {
@@ -541,6 +560,79 @@ function iniciarInventario() {
   actualizarInventarioUI();
 }
 
+// ---------- inventario precargado con las características de la propiedad ----------
+// Las zonas que se cargaron en "Registrar propiedad" (3 Baños, 2 Dormitorios, 1 Cocina…) llegan armadas
+// como ambientes con sus elementos habituales: solo queda indicar el estado de cada uno. Si la propiedad
+// no tiene características (se registró antes), el inventario arranca vacío como siempre.
+
+let prefill = null; // { idPropiedad, snapshot } del último armado automático
+let prefillEnCurso = 0;
+
+function claveZona(texto) {
+  return normalizarAmbiente(texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function itemsDeZona(nombre) {
+  const clave = claveZona(nombre);
+  const buscar = (k) => Object.entries(ITEMS_POR_ZONA).find(([zona]) => claveZona(zona) === k);
+  // "Terraza grande" usa los elementos de "Terraza" si no hay una zona con el nombre completo
+  const hallada = buscar(clave) || buscar(clave.split(" ")[0]);
+  return hallada ? hallada[1] : [];
+}
+
+function estadoInventario() {
+  return JSON.stringify([...$("invSlot").children].map((g) => [g.dataset.ambiente, [...g.querySelectorAll(".inv__row")].map((f) => f.datos())]));
+}
+
+// Con características registradas, los ambientes son los de la propiedad: no se agregan ni se quitan,
+// solo se trabaja con los elementos de cada uno. Sin características (propiedades anteriores) queda el modo manual.
+function fijarAmbientes(fijos) {
+  $("invSlot").closest(".wz-step").classList.toggle("inv--fijo", fijos);
+  const aviso = $("invAuto");
+  aviso.hidden = !fijos;
+  if (fijos) {
+    aviso.textContent = "Estos son los ambientes que se cargaron al registrar la propiedad. Indicá el estado de cada elemento y agregá o quitá elementos de cada ambiente.";
+  }
+}
+
+async function precargarInventario() {
+  const id = Number($("propiedadSelect").value);
+  if (!id) return;
+  const turno = ++prefillEnCurso;
+  let zonas = [];
+  try {
+    const r = await fetch(`${API}/propiedades/${id}/caracteristicas`);
+    if (r.ok) zonas = await r.json();
+  } catch (err) {
+    /* sin conexión: queda el inventario manual */
+  }
+  if (turno !== prefillEnCurso || paso !== 5) return;
+  fijarAmbientes(zonas.length > 0);
+
+  const hayGrupos = $("invSlot").children.length > 0;
+  if (hayGrupos && prefill && prefill.idPropiedad === id) return;
+  // No se pisa lo que el usuario ya cargó o editó a mano.
+  const reemplazable = !hayGrupos || (prefill && prefill.snapshot === estadoInventario());
+  if (!reemplazable) return;
+
+  $("invSlot").innerHTML = "";
+  if (zonas.length === 0) {
+    prefill = null;
+    actualizarInventarioUI();
+    return;
+  }
+  zonas.forEach((z) => {
+    for (let i = 1; i <= z.cantidad; i += 1) {
+      const grupo = crearGrupo(z.cantidad > 1 ? `${z.nombre} ${i}` : z.nombre);
+      const items = itemsDeZona(z.nombre);
+      if (items.length) items.forEach((objeto) => agregarItem(grupo, { objeto, estado: "BUENO" }));
+      else agregarItem(grupo, {});
+    }
+  });
+  actualizarInventarioUI();
+  prefill = { idPropiedad: id, snapshot: estadoInventario() };
+}
+
 // ---------- validación, armado y revisión ----------
 
 function erroresDelPaso(n) {
@@ -574,6 +666,7 @@ function erroresDelPaso(n) {
     const duracion = Number($("duracionMeses").value);
     const periodicidad = Number($("periodicidad").value);
     if (!$("fechaInicio").value) e.push({ campo: $("fechaInicio"), mensaje: "Elegí la fecha de inicio." });
+    else if ($("fechaInicio").value < hoyISO()) e.push({ campo: $("fechaInicio"), mensaje: "La fecha de inicio no puede ser anterior a hoy." });
     if (!(duracion >= 1)) e.push({ campo: $("duracionMeses"), mensaje: "La duración debe ser de al menos 1 mes." });
     if (!(Number($("valorInicial").value) > 0)) e.push({ campo: $("valorInicial"), mensaje: "Ingresá el alquiler mensual inicial." });
     if (!(periodicidad >= 1 && periodicidad <= duracion)) {
@@ -726,6 +819,7 @@ function irAPaso(n, { registrar = true } = {}) {
   $("nextBtn").textContent = n === PASOS.length ? "Generar contrato" : "Siguiente";
   if (n === 3) actualizarGarantes();
   if (n === 4) actualizarDerivados();
+  if (n === 5) precargarInventario();
   if (n === PASOS.length) renderRevision();
   pintarFicha();
   pintarPasos();
@@ -734,6 +828,8 @@ function irAPaso(n, { registrar = true } = {}) {
   programarGuardado();
   const titulo = document.querySelector(`.wz-step[data-step="${n}"] .wz-step__title`);
   window.scrollTo({ top: 0, behavior: "smooth" });
+  // en escritorio solo se desplaza el panel del paso: se lo vuelve a subir
+  document.querySelectorAll(".wz-step").forEach((s) => { s.scrollTop = 0; });
   if (titulo) titulo.focus({ preventScroll: true });
 }
 
@@ -979,6 +1075,8 @@ $("otroBtn").addEventListener("click", () => window.location.reload());
 $("addInquilinoBtn").addEventListener("click", () => agregarPersona(inquilinos, $("inquilinosSlot"), CONFIG_INQUILINO));
 $("addGaranteBtn").addEventListener("click", () => agregarPersona(garantes, $("garantesSlot"), CONFIG_GARANTE));
 $("tipoGarantia").addEventListener("change", actualizarGarantes);
+// El contrato empieza hoy o después: el calendario no deja elegir fechas pasadas.
+$("fechaInicio").min = hoyISO();
 ["fechaInicio", "duracionMeses", "valorInicial", "deposito"].forEach((id) => $(id).addEventListener("input", actualizarDerivados));
 
 // ---------- arranque ----------

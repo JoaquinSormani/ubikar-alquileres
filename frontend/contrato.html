@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal.css">
-<link rel="stylesheet" href="contrato.css?v=7">
+<link rel="stylesheet" href="contrato.css?v=11">
 <link rel="stylesheet" href="vidrio.css">
 </head>
 <body>
@@ -122,6 +122,7 @@
     <section class="wz-step" data-step="5" hidden>
       <h2 class="wz-step__title" tabindex="-1">Inventario de la propiedad</h2>
       <p class="wz-step__hint">Estado de cada elemento al entregar la propiedad. Se anexa al contrato y sirve para comparar al finalizar.</p>
+      <p class="inv-auto" id="invAuto" role="status" hidden></p>
       <p class="inv-resumen" id="invResumen" aria-live="polite" hidden></p>
       <div class="presets" id="presets" aria-label="Agregar ambiente típico"></div>
       <div class="inv-otro">
@@ -214,6 +215,6 @@
 </template>
 
 <script src="ux.js"></script>
-<script src="contrato.js"></script>
+<script src="contrato.js?v=6"></script>
 </body>
 </html>

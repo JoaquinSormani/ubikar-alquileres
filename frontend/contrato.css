@@ -478,6 +478,16 @@ select.field__input {
   min-width: 0;
 }
 
+.inv-auto {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
 .inv-resumen {
   margin: -6px 0 18px;
   font-size: 0.86rem;
@@ -1137,4 +1147,99 @@ body.cargando .persona__buscar {
   max-width: 460px;
   margin: 0 auto 26px;
   text-align: left;
+}
+
+/* ---------- Escritorio: cabecera y pasos fijos; solo se desplaza el panel de campos ---------- */
+/* Si el contenido entra en la pantalla no se mueve nada; si no entra, solo scrollea el panel
+   del paso (los pasos, la ficha y los botones quedan en su lugar). En celular se mantiene el
+   comportamiento de siempre: scrollea toda la página. */
+
+@media (min-width: 720px) and (min-height: 520px) {
+  .wz {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 14px;
+  }
+
+  .wz > * {
+    flex: none;
+  }
+
+  .wz .wz__header {
+    margin-bottom: 16px;
+  }
+
+  .wz .borrador {
+    margin-bottom: 12px;
+  }
+
+  .wz .steps {
+    margin-bottom: 14px;
+  }
+
+  .wz > .wz__cols,
+  .wz > #wizard,
+  .wz > .exito {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .wz > .exito {
+    overflow-y: auto;
+  }
+
+  .wz__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 28px;
+    align-items: stretch;
+  }
+
+  #wizard {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #wizard .wz-step {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  #wizard .req-nota {
+    flex: none;
+  }
+
+  #wizard .wz-actions {
+    position: static;
+    flex: none;
+    margin-top: 12px;
+  }
+
+  .ficha {
+    position: static;
+    align-self: start;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 980px) and (min-height: 520px) {
+  .wz__cols {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
+
+/* Inventario con los ambientes de la propiedad: no se agregan ni se quitan ambientes, solo elementos */
+.inv--fijo .presets,
+.inv--fijo .inv-otro,
+.inv--fijo .inv-vacio,
+.inv--fijo .inv-grupo__head .linklike {
+  display: none;
 }

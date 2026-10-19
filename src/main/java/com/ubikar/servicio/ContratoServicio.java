@@ -184,6 +184,7 @@ public class ContratoServicio {
         }
 
         requerido(s.getFechaInicio() != null, "Falta la fecha de inicio.");
+        requerido(!s.getFechaInicio().isBefore(LocalDate.now()), "La fecha de inicio no puede ser anterior a hoy.");
         requerido(s.getDuracionMeses() != null && s.getDuracionMeses() >= 1, "La duración debe ser de al menos 1 mes.");
         requerido(s.getValorInicial() != null && s.getValorInicial().signum() > 0, "El valor inicial debe ser mayor a cero.");
         requerido(s.getPeriodicidadActualizacion() != null && s.getPeriodicidadActualizacion() >= 1
