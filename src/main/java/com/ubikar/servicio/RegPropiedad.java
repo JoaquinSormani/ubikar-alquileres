@@ -1,16 +1,22 @@
 package com.ubikar.servicio;
 
+import com.ubikar.dao.CaracteristicaPropiedadDAO;
 import com.ubikar.dao.PropiedadDAO;
 import com.ubikar.dao.PropietarioDAO;
 import com.ubikar.dao.Sql2oDAO;
+import com.ubikar.modelo.CaracteristicaPropiedad;
 import com.ubikar.modelo.Propiedad;
 import com.ubikar.modelo.Propietario;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.sql2o.Connection;
 
 public class RegPropiedad {
 
     private final PropietarioDAO propietarioDAO = new PropietarioDAO();
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
+    private final CaracteristicaPropiedadDAO caracteristicaDAO = new CaracteristicaPropiedadDAO();
 
     public Propiedad registrar(SolicitudPropiedad s) {
         validar(s);
@@ -41,9 +47,18 @@ public class RegPropiedad {
             nueva.setDireccion(direccion);
             nueva.setIdPropietario(p.getId());
             nueva.setId(propiedadDAO.create(con, nueva));
+            for (CaracteristicaPropiedad c : s.getCaracteristicas()) {
+                c.setIdPropiedad(nueva.getId());
+                c.setId(caracteristicaDAO.create(con, c));
+                nueva.getCaracteristicas().add(c);
+            }
             con.commit(false);
             return nueva;
         }
+    }
+
+    public List<CaracteristicaPropiedad> caracteristicasDe(Integer idPropiedad) {
+        return caracteristicaDAO.selectByPropiedad(idPropiedad);
     }
 
     private void validar(SolicitudPropiedad s) {
@@ -53,10 +68,26 @@ public class RegPropiedad {
         requerido(hayTexto(p.getDni()) && p.getDni().replaceAll("\\D", "").length() >= 7, "El DNI del propietario no es válido.");
         requerido(hayTexto(p.getDomicilio()), "Falta el domicilio del propietario.");
         requerido(hayTexto(s.getDireccion()) && s.getDireccion().trim().length() >= 5, "Falta la dirección de la propiedad.");
+        validarCaracteristicas(s.getCaracteristicas());
         p.setDni(p.getDni().replaceAll("\\D", ""));
         if (p.getId() == null) {
             requerido(propietarioDAO.readAll().stream().noneMatch(x -> x.getDni().equals(p.getDni())),
                     "Ya existe un propietario con ese DNI.");
+        }
+    }
+
+    // Cada característica es una zona de la propiedad con su cantidad (por ejemplo, 3 Baños); no se repite el nombre.
+    private void validarCaracteristicas(List<CaracteristicaPropiedad> caracteristicas) {
+        requerido(caracteristicas != null && !caracteristicas.isEmpty(), "Falta cargar al menos una característica de la propiedad.");
+        Set<String> vistos = new HashSet<>();
+        for (CaracteristicaPropiedad c : caracteristicas) {
+            requerido(hayTexto(c.getNombre()), "Cada característica necesita un nombre.");
+            String nombre = c.getNombre().trim().replaceAll("\\s+", " ");
+            requerido(nombre.length() <= 80, "El nombre de una característica no puede superar los 80 caracteres.");
+            requerido(c.getCantidad() != null && c.getCantidad() >= 1 && c.getCantidad() <= 99,
+                    "La cantidad de «" + nombre + "» debe estar entre 1 y 99.");
+            requerido(vistos.add(nombre.toLowerCase()), "La característica «" + nombre + "» está repetida.");
+            c.setNombre(nombre);
         }
     }
 

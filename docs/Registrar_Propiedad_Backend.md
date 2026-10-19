@@ -266,3 +266,14 @@ Después de las pruebas, borren las filas de prueba de `propiedad` y `propietari
 ## 10. Si el grupo agrega campos a Propiedad
 
 Hoy el modelo de dominio solo tiene `direccion`, y por eso el formulario tiene un solo campo. Para agregar otro (por ejemplo tipo de inmueble o ciudad) hay que tocar, en este orden: la columna en `bd_ubikar.sql` y en la base, la clase `Propiedad`, `PropiedadDAO`, `SolicitudPropiedad`, la validación del servicio y el formulario de `propiedad.html` / `propiedad.js`. Además, el Modelo de Dominio y los diagramas de diseño.
+
+## 9. Características de la propiedad (agregado)
+
+El registro ahora incluye las zonas del inmueble y la cantidad de cada una (por ejemplo, 3 baños), cargadas en el paso 2 de `propiedad.html`.
+
+- **Pedido:** `POST /api/propiedades` suma el campo `"caracteristicas": [{"nombre": "Baño", "cantidad": 3}, ...]`. El front guarda los nombres en singular y arma el plural al mostrarlos.
+- **Validaciones (`RegPropiedad.validarCaracteristicas`):** al menos una característica; nombre obligatorio (máx. 80 caracteres); cantidad entera entre 1 y 99; sin nombres repetidos (se ignoran mayúsculas y espacios de más).
+- **Persistencia:** tabla `caracteristica_propiedad` (ver `bd_ubikar.sql`), con `CaracteristicaPropiedadDAO`. Se guarda en la misma transacción que el propietario y la propiedad.
+- **Respuesta:** la propiedad creada devuelve también la lista `caracteristicas` con sus ids.
+- **Consulta:** `GET /api/propiedades/{id}/caracteristicas`.
+- **Base ya creada:** quien tenga la base `ubikar` armada debe crear la tabla nueva (el `CREATE TABLE` está en `bd_ubikar.sql`). Las propiedades cargadas antes de este cambio quedan sin características.

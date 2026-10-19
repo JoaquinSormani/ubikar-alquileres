@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="portal.css">
-<link rel="stylesheet" href="contrato.css?v=7">
-<link rel="stylesheet" href="propiedad.css">
+<link rel="stylesheet" href="contrato.css?v=11">
+<link rel="stylesheet" href="propiedad.css?v=2">
 <link rel="stylesheet" href="vidrio.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
     </a>
     <div>
       <h1 class="wz__title">Registrar propiedad</h1>
-      <p class="wz__sub">Cargá la dirección de la propiedad y después buscá al propietario.</p>
+      <p class="wz__sub">Cargá la dirección y las características de la propiedad, y después buscá al propietario.</p>
     </div>
     <a href="index.html" class="btn btn--ghost wz__volver">Volver al inicio</a>
   </header>
@@ -47,6 +47,25 @@
     </section>
 
     <section class="wz-step" data-step="2" hidden>
+      <h2 class="wz-step__title" tabindex="-1">Características de la propiedad</h2>
+      <p class="wz-step__hint">Indicá qué zonas tiene el inmueble y cuántas de cada una (por ejemplo, 3 baños). Elegí las opciones de abajo o agregá otra.</p>
+
+      <div class="resumen">
+        <span>Propiedad: <span class="resumen__nombre" id="resumenDireccionCar"></span></span>
+        <button type="button" class="linklike" id="cambiarCarBtn">Cambiar</button>
+      </div>
+
+      <p class="inv-resumen" id="carResumen" aria-live="polite" hidden></p>
+      <div class="presets" id="carPresets" aria-label="Agregar zona típica"></div>
+      <div class="inv-otro">
+        <input class="field__input" id="otraCarInput" placeholder="Otra característica (Ej: Patio, Terraza)…" list="zonas" autocomplete="off" maxlength="80">
+        <button type="button" class="btn btn--ghost" id="otraCarBtn">Agregar</button>
+      </div>
+      <p class="inv-vacio" id="carVacio">Elegí una zona típica o agregá la tuya para empezar a describir la propiedad.</p>
+      <ul class="car-lista" id="carLista"></ul>
+    </section>
+
+    <section class="wz-step" data-step="3" hidden>
       <h2 class="wz-step__title" tabindex="-1">Propietario</h2>
       <p class="wz-step__hint">Buscá al propietario por DNI. Si ya está cargado, se completan sus datos; si no, se da de alta junto con la propiedad.</p>
 
@@ -127,6 +146,6 @@
 </template>
 
 <script src="ux.js"></script>
-<script src="propiedad.js"></script>
+<script src="propiedad.js?v=5"></script>
 </body>
 </html>

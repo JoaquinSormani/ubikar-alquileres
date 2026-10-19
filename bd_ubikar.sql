@@ -47,6 +47,15 @@ CREATE TABLE `ubikar`.`propiedad` (
   PRIMARY KEY (`id`),
   FOREIGN KEY (`idPropietario`) REFERENCES `ubikar`.`propietario` (`id`));
 
+CREATE TABLE `ubikar`.`caracteristica_propiedad` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `idPropiedad` INT NOT NULL,
+  `nombre` VARCHAR(80) NOT NULL,
+  `cantidad` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_caracteristica` (`idPropiedad`, `nombre`),
+  FOREIGN KEY (`idPropiedad`) REFERENCES `ubikar`.`propiedad` (`id`));
+
 CREATE TABLE `ubikar`.`contrato` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `idPropiedad` INT NOT NULL,

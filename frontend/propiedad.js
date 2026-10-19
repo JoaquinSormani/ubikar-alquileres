@@ -3,13 +3,17 @@
 const API_BASE = "http://localhost:8081";
 const API = `${API_BASE}/api`;
 
-const PASOS = ["Propiedad", "Propietario"];
+const PASOS = ["Propiedad", "Características", "Propietario"];
+// Zonas típicas que se ofrecen para agregar con un toque (cada una arranca con cantidad 1).
+const PRESETS = ["Dormitorio", "Baño", "Cocina", "Living"];
+const ZONAS_SUGERIDAS = ["Comedor", "Patio", "Terraza", "Balcón", "Cochera", "Lavadero", "Jardín", "Quincho"];
 const catalogo = { propietarios: [], inquilinos: [], garantes: [], propiedades: [] };
 const $ = (id) => document.getElementById(id);
 
 let paso = 1;
 let propietario;
 let terminado = false;
+const caracteristicas = [];
 
 // ---------- utilidades ----------
 
@@ -130,7 +134,159 @@ function crearPersona({ onBuscar } = {}) {
   return persona;
 }
 
-// ---------- paso 2: propiedad ----------
+// ---------- paso 2: características de la propiedad ----------
+// Cada característica es una zona con su cantidad (3 Baños). No se repite el nombre: agregar una zona
+// que ya está cargada la resalta en lugar de duplicarla.
+
+// Las zonas se guardan en singular (Baño) y se muestran según la cantidad (1 Baño, 3 Baños).
+const PLURALES_ESPECIALES = { living: "Livings", comedor: "Comedores", balcón: "Balcones", jardín: "Jardines", altillo: "Altillos" };
+
+function plural(nombre) {
+  const n = nombre.trim();
+  const especial = PLURALES_ESPECIALES[normalizar(n)];
+  if (especial) return especial;
+  // varias palabras (Terraza grande): no hay regla segura, se marca con (s)
+  if (/\s/.test(n)) return `${n}(s)`;
+  if (/[aeiouáéíóú]$/i.test(n)) return `${n}s`;
+  if (/z$/i.test(n)) return `${n.slice(0, -1)}ces`;
+  if (/[lrndj]$/i.test(n)) return `${n}es`;
+  return `${n}(s)`;
+}
+
+// Para comparar zonas se ignoran mayúsculas, espacios de más y tildes (Jardin = Jardín).
+function clave(texto) {
+  return normalizar(texto).normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function etiquetaZona(nombre, cantidad) {
+  return cantidad === 1 ? nombre : plural(nombre);
+}
+
+// "Baños" o "baño" -> "Baño": si lo escrito es el plural de una zona conocida, se guarda el singular.
+function canonico(texto) {
+  const buscada = clave(texto);
+  const conocidas = [...PRESETS, ...ZONAS_SUGERIDAS, ...Object.keys(PLURALES_ESPECIALES)];
+  const hallada = conocidas.find((z) => clave(z) === buscada || clave(plural(z)) === buscada);
+  return hallada ? nombreZona(hallada) : nombreZona(texto);
+}
+
+function nombreZona(texto) {
+  const limpio = texto.trim().replace(/\s+/g, " ");
+  return limpio.charAt(0).toUpperCase() + limpio.slice(1);
+}
+
+function buscarZona(nombre) {
+  const buscada = clave(canonico(nombre));
+  return caracteristicas.find((c) => clave(c.nombre) === buscada);
+}
+
+function resaltarZona(nombre) {
+  const clave = normalizar(nombre);
+  const fila = [...$("carLista").children].find((f) => normalizar(f.dataset.nombre) === clave);
+  if (!fila) return;
+  fila.scrollIntoView({ behavior: "smooth", block: "center" });
+  fila.classList.add("car__fila--resaltada");
+  setTimeout(() => fila.classList.remove("car__fila--resaltada"), 900);
+}
+
+function agregarZona(nombre) {
+  const existente = buscarZona(nombre);
+  if (existente) {
+    resaltarZona(existente.nombre);
+    return;
+  }
+  caracteristicas.push({ nombre: canonico(nombre), cantidad: 1 });
+  pintarCaracteristicas();
+}
+
+function cambiarCantidad(zona, valor) {
+  const n = Math.round(Number(valor));
+  zona.cantidad = Number.isFinite(n) ? Math.min(99, Math.max(1, n)) : zona.cantidad;
+  pintarCaracteristicas();
+}
+
+function pintarCaracteristicas() {
+  const lista = $("carLista");
+  lista.innerHTML = "";
+  caracteristicas.forEach((zona) => {
+    const fila = el("li", "car__fila");
+    fila.dataset.nombre = zona.nombre;
+    const nombre = el("span", "car__nombre", etiquetaZona(zona.nombre, zona.cantidad));
+    const menos = el("button", "car__paso", "−");
+    menos.type = "button";
+    menos.setAttribute("aria-label", `Una ${zona.nombre} menos`);
+    menos.disabled = zona.cantidad <= 1;
+    menos.addEventListener("click", () => cambiarCantidad(zona, zona.cantidad - 1));
+    const cantidad = el("input", "field__input field__input--mono car__cantidad");
+    cantidad.type = "number";
+    cantidad.min = "1";
+    cantidad.max = "99";
+    cantidad.inputMode = "numeric";
+    cantidad.value = String(zona.cantidad);
+    cantidad.setAttribute("aria-label", `Cantidad de ${zona.nombre}`);
+    cantidad.addEventListener("change", () => cambiarCantidad(zona, cantidad.value));
+    const mas = el("button", "car__paso", "+");
+    mas.type = "button";
+    mas.setAttribute("aria-label", `Una ${zona.nombre} más`);
+    mas.disabled = zona.cantidad >= 99;
+    mas.addEventListener("click", () => cambiarCantidad(zona, zona.cantidad + 1));
+    const quitar = el("button", "linklike", "Quitar");
+    quitar.type = "button";
+    quitar.setAttribute("aria-label", `Quitar ${zona.nombre}`);
+    quitar.addEventListener("click", () => {
+      caracteristicas.splice(caracteristicas.indexOf(zona), 1);
+      pintarCaracteristicas();
+    });
+    const control = el("div", "car__control");
+    control.append(menos, cantidad, mas);
+    fila.append(nombre, control, quitar);
+    lista.append(fila);
+  });
+  document.querySelectorAll("#carPresets .chip").forEach((chip) => {
+    chip.classList.toggle("chip--cargado", !!buscarZona(chip.dataset.zona));
+  });
+  const resumen = $("carResumen");
+  resumen.hidden = caracteristicas.length === 0;
+  resumen.textContent = textoCaracteristicas();
+  $("carVacio").hidden = caracteristicas.length > 0;
+}
+
+function textoCaracteristicas() {
+  return caracteristicas.map((c) => `${c.cantidad} ${etiquetaZona(c.nombre, c.cantidad)}`).join(" · ");
+}
+
+function iniciarCaracteristicas() {
+  const sugeridas = el("datalist");
+  sugeridas.id = "zonas";
+  ZONAS_SUGERIDAS.forEach((z) => sugeridas.append(new Option(z)));
+  document.body.append(sugeridas);
+  PRESETS.forEach((zona) => {
+    const chip = el("button", "chip", `+ ${plural(zona)}`);
+    chip.type = "button";
+    chip.dataset.zona = zona;
+    chip.addEventListener("click", () => agregarZona(zona));
+    $("carPresets").append(chip);
+  });
+  $("otraCarBtn").addEventListener("click", () => {
+    const nombre = $("otraCarInput").value;
+    if (!nombre.trim()) {
+      $("otraCarInput").focus();
+      return;
+    }
+    agregarZona(nombre);
+    $("otraCarInput").value = "";
+    $("otraCarInput").focus();
+  });
+  $("otraCarInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      $("otraCarBtn").click();
+    }
+  });
+  pintarCaracteristicas();
+}
+
+// ---------- paso 3: propietario ----------
 
 function propiedadesDelPropietario() {
   const id = propietario.datos().id;
@@ -165,7 +321,7 @@ function actualizarInfoPropietario() {
   }
 }
 
-function pintarPaso2() {
+function pintarPaso3() {
   $("resumenDireccion").textContent = $("direccionInput").value.trim();
   actualizarInfoPropietario();
 }
@@ -182,6 +338,12 @@ function erroresDelPaso(n) {
     return [];
   }
   if (n === 2) {
+    if (caracteristicas.length === 0) {
+      return [{ campo: $("otraCarInput"), mensaje: "Cargá al menos una característica de la propiedad (podés usar las zonas de arriba)." }];
+    }
+    return [];
+  }
+  if (n === 3) {
     const errores = propietario.errores();
     if (errores.length) return errores;
     // Recien acá se sabe quién es el propietario, así que el duplicado se controla en este paso.
@@ -197,6 +359,7 @@ function armarSolicitud() {
   return {
     propietario: propietario.datos(),
     direccion: $("direccionInput").value.trim().replace(/\s+/g, " "),
+    caracteristicas: caracteristicas.map((c) => ({ nombre: c.nombre, cantidad: c.cantidad })),
   };
 }
 
@@ -228,15 +391,18 @@ function irAPaso(n, { registrar = true } = {}) {
   UX.limpiar($("stepError"));
   $("prevBtn").hidden = n === 1;
   $("nextBtn").textContent = n === PASOS.length ? "Registrar propiedad" : "Siguiente";
-  if (n === 2) pintarPaso2();
+  if (n === 2) $("resumenDireccionCar").textContent = $("direccionInput").value.trim();
+  if (n === 3) pintarPaso3();
   pintarPasos();
   // Cada paso es una entrada del historial: "Atras" del navegador vuelve al paso anterior.
   if (registrar) history.pushState({ paso: n }, "", `#paso-${n}`);
   const titulo = document.querySelector(`.wz-step[data-step="${n}"] .wz-step__title`);
   window.scrollTo({ top: 0, behavior: "smooth" });
+  // en escritorio solo se desplaza el panel del paso: se lo vuelve a subir
+  document.querySelectorAll(".wz-step").forEach((s) => { s.scrollTop = 0; });
   if (titulo) titulo.focus({ preventScroll: true });
   if (n === 1) $("direccionInput").focus({ preventScroll: true });
-  if (n === 2) {
+  if (n === 3) {
     const campoDni = $("propietarioSlot").querySelector('[data-f="dni"]');
     if (campoDni) campoDni.focus({ preventScroll: true });
   }
@@ -293,6 +459,7 @@ function mostrarExito(respuesta, solicitud, eraNuevo) {
   const p = solicitud.propietario;
   const filas = [
     ["Dirección", respuesta.direccion || solicitud.direccion],
+    ["Características", solicitud.caracteristicas.map((c) => `${c.cantidad} ${etiquetaZona(c.nombre, c.cantidad)}`).join(" · ")],
     ["Propietario", `${p.nombre} ${p.apellido}`],
     ["DNI", p.dni],
   ];
@@ -323,6 +490,7 @@ $("nextBtn").addEventListener("click", () => {
 
 $("prevBtn").addEventListener("click", () => irAPaso(paso - 1));
 $("cambiarBtn").addEventListener("click", () => irAPaso(1));
+$("cambiarCarBtn").addEventListener("click", () => irAPaso(1));
 document.querySelectorAll(".wz-step").forEach((s, i) => {
   const t = s.querySelector(".wz-step__title");
   t.before(el("p", "wz-step__eyebrow", `Paso ${i + 1} de ${PASOS.length}`));
@@ -365,6 +533,7 @@ async function cargarCatalogos() {
 
 propietario = crearPersona({ onBuscar: actualizarInfoPropietario });
 $("propietarioSlot").append(propietario.nodo);
+iniciarCaracteristicas();
 history.replaceState({ paso: 1 }, "", "#paso-1");
 irAPaso(1, { registrar: false });
 cargarCatalogos();

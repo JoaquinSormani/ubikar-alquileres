@@ -1,10 +1,23 @@
 package com.ubikar.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Propiedad {
 
     private Integer id;
     private String direccion;
     private Integer idPropietario;
+
+    private List<CaracteristicaPropiedad> caracteristicas = new ArrayList<>();
+
+    public List<CaracteristicaPropiedad> getCaracteristicas() {
+        return caracteristicas;
+    }
+
+    public void setCaracteristicas(List<CaracteristicaPropiedad> caracteristicas) {
+        this.caracteristicas = caracteristicas;
+    }
 
     public Integer getId() {
         return id;
