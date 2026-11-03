@@ -2,6 +2,7 @@ package com.ubikar.dao;
 
 import com.ubikar.modelo.EstadoPago;
 import com.ubikar.modelo.Pago;
+import java.time.LocalDate;
 import java.util.List;
 import org.sql2o.Connection;
 
@@ -24,11 +25,21 @@ public class PagoDAO {
     }
 
     public List<Pago> selectByContrato(Integer idContrato) {
-        String sql = "SELECT * FROM pago WHERE idContrato = :idContrato ORDER BY id";
+        String sql = "SELECT * FROM pago WHERE idContrato = :idContrato ORDER BY periodo";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
             return con.createQuery(sql)
                     .addParameter("idContrato", idContrato)
                     .executeAndFetch(Pago.class);
+        }
+    }
+
+    public Pago selectByContratoYPeriodo(Integer idContrato, LocalDate periodo) {
+        String sql = "SELECT * FROM pago WHERE idContrato = :idContrato AND periodo = :periodo";
+        try (Connection con = Sql2oDAO.getSql2o().open()) {
+            return con.createQuery(sql)
+                    .addParameter("idContrato", idContrato)
+                    .addParameter("periodo", periodo)
+                    .executeAndFetchFirst(Pago.class);
         }
     }
 
@@ -48,8 +59,10 @@ public class PagoDAO {
     }
 
     public Integer create(Connection con, Pago p) {
-        String sql = "INSERT INTO pago (idContrato, fecha, monto, indiceActualizacion, diasAtraso, punitorio, estado) "
-                + "VALUES (:idContrato, :fecha, :monto, :indiceActualizacion, :diasAtraso, :punitorio, :estado)";
+        String sql = "INSERT INTO pago (idContrato, periodo, fechaVencimiento, fecha, monto, indiceActualizacion, "
+                + "diasAtraso, punitorio, estado, medioPago) "
+                + "VALUES (:idContrato, :periodo, :fechaVencimiento, :fecha, :monto, :indiceActualizacion, "
+                + ":diasAtraso, :punitorio, :estado, :medioPago)";
         return con.createQuery(sql, true).bind(p).executeUpdate().getKey(Integer.class);
     }
 
@@ -60,9 +73,9 @@ public class PagoDAO {
     }
 
     public void update(Connection con, Pago p) {
-        String sql = "UPDATE pago SET idContrato = :idContrato, fecha = :fecha, monto = :monto, "
-                + "indiceActualizacion = :indiceActualizacion, diasAtraso = :diasAtraso, "
-                + "punitorio = :punitorio, estado = :estado WHERE id = :id";
+        String sql = "UPDATE pago SET idContrato = :idContrato, periodo = :periodo, fechaVencimiento = :fechaVencimiento, "
+                + "fecha = :fecha, monto = :monto, indiceActualizacion = :indiceActualizacion, diasAtraso = :diasAtraso, "
+                + "punitorio = :punitorio, estado = :estado, medioPago = :medioPago WHERE id = :id";
         con.createQuery(sql).bind(p).executeUpdate();
     }
 

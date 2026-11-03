@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UBIKAR - Registrar pago</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="contrato.css?v=11">
+<link rel="stylesheet" href="pago.css?v=3">
+<link rel="stylesheet" href="vidrio.css">
+</head>
+<body>
+
+<div class="wz">
+  <header class="wz__header">
+    <a href="index.html" class="wz__logo" aria-label="Volver al inicio">
+      <img src="assets/logo-ubikar-recorte.png" alt="UBIKAR Propiedades" class="brand-logo">
+    </a>
+    <div>
+      <h1 class="wz__title">Registrar pago</h1>
+      <p class="wz__sub">Elegí el cobro a registrar: el punitorio y el recibo se calculan solos.</p>
+    </div>
+    <a href="index.html" class="btn btn--ghost wz__volver">Volver al inicio</a>
+  </header>
+
+  <p class="wz-error" id="offline" role="alert" hidden>
+    No hay conexión con el servidor. Verificá que el backend esté corriendo en <code>localhost:8081</code> y recargá la página.
+  </p>
+
+  <div class="pago__barra">
+    <label class="pago__buscador">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span class="pago__sr">Buscar por DNI, nombre o propiedad</span>
+      <input class="field__input" id="buscador" type="search" placeholder="Buscar por DNI, nombre o propiedad…" autocomplete="off" inputmode="search">
+    </label>
+    <p class="pago__conteo" id="conteo" aria-live="polite"></p>
+  </div>
+
+  <main class="pago__cuerpo" id="cuerpo">
+    <section class="pago__seccion" aria-labelledby="tituloPend">
+      <h2 class="pago__titulo" id="tituloPend">Pagos pendientes <span class="pago__badge" id="cantPend">0</span></h2>
+      <div class="pago__scroll">
+        <table class="pago__tabla">
+          <thead>
+            <tr>
+              <th>Inquilino</th><th>Propiedad</th><th>Mes</th><th>Vence</th>
+              <th class="pago__num">Alquiler</th><th class="pago__num">Punitorio</th><th class="pago__num">Total</th><th><span class="pago__sr">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbPend"></tbody>
+        </table>
+      </div>
+      <p class="pago__vacio" id="vacioPend" hidden></p>
+    </section>
+
+    <section class="pago__seccion" aria-labelledby="tituloReal">
+      <h2 class="pago__titulo" id="tituloReal">Pagos realizados este mes <span class="pago__badge pago__badge--ok" id="cantReal">0</span></h2>
+      <div class="pago__scroll">
+        <table class="pago__tabla">
+          <thead>
+            <tr>
+              <th>Fecha de pago</th><th>Inquilino</th><th>Propiedad</th><th>Mes pagado</th><th>Forma de pago</th>
+              <th class="pago__num">Total</th><th><span class="pago__sr">Recibo</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbReal"></tbody>
+        </table>
+      </div>
+      <p class="pago__vacio" id="vacioReal" hidden></p>
+    </section>
+  </main>
+</div>
+
+<dialog class="cobro" id="cobroDialog" aria-labelledby="cobroTitulo">
+  <form id="cobroForm" novalidate>
+    <h2 class="cobro__titulo" id="cobroTitulo" tabindex="-1">Cobrar alquiler</h2>
+    <p class="cobro__resumen" id="cobroResumen"></p>
+
+    <div class="cobro__campos">
+      <label class="field">
+        <span class="field__label">Fecha de pago <span class="req" aria-hidden="true">*</span></span>
+        <input class="field__input" type="date" id="fechaPago" required>
+      </label>
+      <fieldset class="radios radios--lista" id="medioPago">
+        <legend class="field__label">Forma de pago <span class="req" aria-hidden="true">*</span></legend>
+        <div class="radios__opciones"></div>
+      </fieldset>
+    </div>
+
+    <dl class="pago__calculo" id="calculo" aria-live="polite">
+      <div class="pago__fila"><dt>Alquiler</dt><dd id="calcAlquiler"></dd></div>
+      <div class="pago__fila" id="filaPunitorio"><dt id="calcPunitorioEtiqueta">Punitorio</dt><dd id="calcPunitorio"></dd></div>
+      <div class="pago__fila pago__fila--total"><dt>Total a cobrar</dt><dd id="calcTotal"></dd></div>
+    </dl>
+
+    <p class="cobro__error" id="cobroError" role="alert" hidden></p>
+
+    <div class="cobro__acciones">
+      <button type="button" class="btn btn--ghost" id="cancelarBtn">Cancelar</button>
+      <button type="submit" class="btn btn--primary" id="registrarBtn">Registrar pago</button>
+    </div>
+  </form>
+
+  <div class="cobro__exito" id="cobroExito" hidden>
+    <div class="exito__mark" aria-hidden="true">✓</div>
+    <h2 class="cobro__titulo" id="exitoTitulo" tabindex="-1">Pago registrado</h2>
+    <p class="cobro__resumen" id="exitoDetalle"></p>
+    <div class="review exito__datos">
+      <dl id="exitoDatos"></dl>
+    </div>
+    <div class="cobro__acciones cobro__acciones--centro">
+      <a class="btn btn--primary" id="reciboLink" href="#" target="_blank" rel="noopener">Ver recibo (PDF)</a>
+      <a class="btn btn--ghost" id="whatsappLink" href="#" target="_blank" rel="noopener" hidden>Avisar por WhatsApp</a>
+      <button type="button" class="btn btn--ghost" id="cerrarBtn">Cerrar</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="pago.js?v=3"></script>
+</body>
+</html>

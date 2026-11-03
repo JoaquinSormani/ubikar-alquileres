@@ -7,12 +7,15 @@ public class Pago {
 
     private Integer id;
     private Integer idContrato;
-    private LocalDate fecha;
+    private LocalDate periodo;           // primer día del mes que se paga
+    private LocalDate fechaVencimiento;
+    private LocalDate fecha;             // fecha en que se pagó (null mientras está pendiente)
     private BigDecimal monto;
     private BigDecimal indiceActualizacion;
     private Integer diasAtraso = 0;
     private BigDecimal punitorio = BigDecimal.ZERO;
     private EstadoPago estado = EstadoPago.PENDIENTE;
+    private MedioPago medioPago;
 
     public Integer getId() {
         return id;
@@ -28,6 +31,30 @@ public class Pago {
 
     public void setIdContrato(Integer idContrato) {
         this.idContrato = idContrato;
+    }
+
+    public LocalDate getPeriodo() {
+        return periodo;
+    }
+
+    public void setPeriodo(LocalDate periodo) {
+        this.periodo = periodo;
+    }
+
+    public LocalDate getFechaVencimiento() {
+        return fechaVencimiento;
+    }
+
+    public void setFechaVencimiento(LocalDate fechaVencimiento) {
+        this.fechaVencimiento = fechaVencimiento;
+    }
+
+    public MedioPago getMedioPago() {
+        return medioPago;
+    }
+
+    public void setMedioPago(MedioPago medioPago) {
+        this.medioPago = medioPago;
     }
 
     public LocalDate getFecha() {

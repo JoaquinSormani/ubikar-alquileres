@@ -1,0 +1,335 @@
+/* Registrar pago: reutiliza portal.css y contrato.css; aca solo lo propio de esta pantalla */
+
+.pago__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- buscador ---------- */
+
+.pago__barra {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.pago__buscador {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+}
+
+.pago__buscador svg {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.pago__buscador .field__input {
+  padding-left: 44px;
+  width: 100%;
+}
+
+.pago__conteo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- tablas ---------- */
+
+.pago__cuerpo {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.pago__seccion {
+  padding: 20px 22px 18px;
+  border-radius: 24px;
+  background: var(--vidrio, var(--paper-raised));
+  -webkit-backdrop-filter: var(--desenfoque, none);
+  backdrop-filter: var(--desenfoque, none);
+  border: 1px solid var(--vidrio-borde, var(--line));
+  box-shadow: var(--vidrio-sombra, none);
+}
+
+.pago__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--wine);
+}
+
+.pago__badge {
+  min-width: 26px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--wine);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.pago__badge--ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.pago__scroll {
+  overflow-x: auto;
+}
+
+.pago__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pago__tabla th {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1.5px solid var(--line);
+  white-space: nowrap;
+}
+
+.pago__tabla td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.pago__tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pago__tabla tbody tr:hover {
+  background: rgba(168, 88, 63, 0.06);
+}
+
+.pago__num {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pago__quien {
+  font-weight: 600;
+}
+
+.pago__sub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.pago__mora {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.pago__sub.pago__mora {
+  font-weight: 600;
+}
+
+.pago__vacio {
+  margin: 4px 0 2px;
+  padding: 18px;
+  border: 1.5px dashed var(--line);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.pago__tabla .btn {
+  padding: 8px 16px;
+  min-height: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ---------- cuadro para cobrar ---------- */
+
+.cobro {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 26px 26px 22px;
+  border: 1px solid var(--vidrio-borde, var(--line));
+  border-radius: 24px;
+  background: var(--paper-raised, #fffaf5);
+  color: var(--ink);
+  box-shadow: 0 30px 80px -20px rgba(63, 21, 33, 0.45);
+  overflow-y: auto;
+}
+
+.cobro::backdrop {
+  background: rgba(40, 20, 20, 0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.cobro[open] {
+  animation: stepIn 220ms var(--ease-out);
+}
+
+.cobro__titulo {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--wine);
+}
+
+.cobro__titulo:focus {
+  outline: none;
+}
+
+.cobro__resumen {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.cobro__campos {
+  display: grid;
+  gap: 16px;
+}
+
+.cobro__error {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(245, 223, 224, 0.92);
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.cobro__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cobro__acciones--centro {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cobro__exito {
+  text-align: center;
+}
+
+.cobro__exito .exito__datos {
+  margin: 0 auto;
+}
+
+.cobro .radios--lista .radios__opciones {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.cobro .radio {
+  padding: 12px 14px;
+}
+
+/* cuenta del cobro */
+.pago__calculo {
+  margin: 18px 0 0;
+  padding: 14px 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 253, 251, 0.6);
+}
+
+.pago__fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 0;
+}
+
+.pago__fila dt {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.pago__fila dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pago__fila--total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1.5px solid var(--line);
+}
+
+.pago__fila--total dt {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.pago__fila--total dd {
+  font-size: 1.25rem;
+  color: var(--wine);
+}
+
+.pago__fila--mora dd {
+  color: var(--danger);
+}
+
+/* ---------- escritorio: buscador fijo y solo se desplazan las tablas ---------- */
+
+@media (min-width: 720px) and (min-height: 520px) {
+  .wz > .pago__cuerpo {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 720px) {
+  .pago__barra {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .pago__buscador {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cobro[open] {
+    animation-duration: 1ms;
+  }
+}
