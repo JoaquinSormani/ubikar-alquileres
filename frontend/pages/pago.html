@@ -7,23 +7,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="portal.css">
-<link rel="stylesheet" href="contrato.css?v=11">
-<link rel="stylesheet" href="pago.css?v=3">
-<link rel="stylesheet" href="vidrio.css">
+<link rel="stylesheet" href="../styles/portal.css">
+<link rel="stylesheet" href="../styles/contrato.css?v=11">
+<link rel="stylesheet" href="pago.css?v=10">
+<link rel="stylesheet" href="../styles/vidrio.css">
 </head>
 <body>
 
 <div class="wz">
   <header class="wz__header">
-    <a href="index.html" class="wz__logo" aria-label="Volver al inicio">
-      <img src="assets/logo-ubikar-recorte.png" alt="UBIKAR Propiedades" class="brand-logo">
+    <a href="../index.html" class="wz__logo" aria-label="Volver al inicio">
+      <img src="../assets/logo-ubikar-recorte.png" alt="UBIKAR Propiedades" class="brand-logo">
     </a>
     <div>
       <h1 class="wz__title">Registrar pago</h1>
       <p class="wz__sub">Elegí el cobro a registrar: el punitorio y el recibo se calculan solos.</p>
     </div>
-    <a href="index.html" class="btn btn--ghost wz__volver">Volver al inicio</a>
+    <a href="../index.html" class="btn btn--ghost wz__volver">Volver al inicio</a>
   </header>
 
   <p class="wz-error" id="offline" role="alert" hidden>
@@ -62,7 +62,7 @@
         <table class="pago__tabla">
           <thead>
             <tr>
-              <th>Fecha de pago</th><th>Inquilino</th><th>Propiedad</th><th>Mes pagado</th><th>Forma de pago</th>
+              <th>Recibo N.º</th><th>Fecha de pago</th><th>Inquilino</th><th>Propiedad</th><th>Mes pagado</th><th>Forma de pago</th>
               <th class="pago__num">Total</th><th><span class="pago__sr">Recibo</span></th>
             </tr>
           </thead>
@@ -119,6 +119,8 @@
   </div>
 </dialog>
 
-<script src="pago.js?v=3"></script>
+<script src="../services/api.js"></script>
+
+<script src="pago.js?v=6"></script>
 </body>
 </html>

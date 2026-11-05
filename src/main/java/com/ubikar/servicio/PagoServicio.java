@@ -1,5 +1,6 @@
 package com.ubikar.servicio;
 
+import com.ubikar.config.ReglasDeCobro;
 import com.ubikar.dao.ContratoDAO;
 import com.ubikar.dao.PagoDAO;
 import com.ubikar.dao.PropiedadDAO;
@@ -33,7 +34,7 @@ import org.sql2o.Connection;
  */
 public class PagoServicio {
 
-    private static final int DIA_VENCIMIENTO = 10;
+    private static final int DIA_VENCIMIENTO = ReglasDeCobro.DIA_VENCIMIENTO;
 
     private final ContratoDAO contratoDAO = new ContratoDAO();
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
@@ -49,7 +50,7 @@ public class PagoServicio {
     /** Una fila de la tabla: un cobro (pendiente o pagado) con los datos del contrato. */
     public record FilaPago(Integer idPago, Integer idContrato, String direccion, List<PersonaVista> inquilinos,
             String periodo, String periodoTexto, LocalDate fechaVencimiento, BigDecimal monto,
-            int diasAtraso, BigDecimal punitorio, BigDecimal total, LocalDate fechaPago, MedioPago medioPago) {
+            int diasAtraso, BigDecimal punitorio, BigDecimal total, LocalDate fechaPago, MedioPago medioPago, Integer numeroRecibo) {
     }
 
     /** Pendientes de cobro (con el punitorio a la fecha) y pagos realizados en el mes en curso. */
@@ -88,7 +89,7 @@ public class PagoServicio {
             }
         }
         pendientes.sort(Comparator.comparing(FilaPago::fechaVencimiento).thenComparing(FilaPago::direccion, String.CASE_INSENSITIVE_ORDER));
-        realizados.sort(Comparator.comparing(FilaPago::fechaPago).reversed().thenComparing(FilaPago::idPago, Comparator.reverseOrder()));
+        realizados.sort(Comparator.comparing(FilaPago::numeroRecibo, Comparator.nullsLast(Comparator.<Integer>reverseOrder())).thenComparing(FilaPago::idPago, Comparator.reverseOrder()));
         return new PanelPagos(hoy, pendientes, realizados);
     }
 
@@ -121,7 +122,12 @@ public class PagoServicio {
         p.setPunitorio(mora.punitorio());
         p.setEstado(EstadoPago.PAGADO);
         p.setMedioPago(s.getMedioPago() == null ? MedioPago.EFECTIVO : s.getMedioPago());
-        pagoDAO.update(p);
+        // el número de recibo se asigna al cobrar, correlativo en el orden en que se paga
+        try (Connection con = Sql2oDAO.getSql2o().beginTransaction()) {
+            p.setNumeroRecibo(pagoDAO.siguienteNumeroRecibo(con));
+            pagoDAO.update(con, p);
+            con.commit(false);
+        }
         return p;
     }
 
@@ -143,7 +149,7 @@ public class PagoServicio {
             nombres.append(i.getNombre()).append(' ').append(i.getApellido()).append(" (DNI ").append(Formato.dni(i.getDni())).append(')');
         }
         BigDecimal total = p.getMonto().add(p.getPunitorio());
-        DatosRecibo datos = new DatosRecibo(p.getId(), p.getFecha(), nombres.toString(), propiedad.getDireccion(),
+        DatosRecibo datos = new DatosRecibo(numeroDe(p), p.getFecha(), nombres.toString(), propiedad.getDireccion(),
                 propietario.getNombre() + " " + propietario.getApellido(), textoPeriodo(YearMonth.from(p.getPeriodo())),
                 p.getFechaVencimiento(), p.getFecha(), p.getMedioPago(), p.getMonto(), p.getDiasAtraso(), p.getPunitorio(), total);
         return generadorRecibo.generar(datos);
@@ -151,6 +157,17 @@ public class PagoServicio {
 
     public String contenidoRecibo() {
         return generadorRecibo.tipoContenido();
+    }
+
+    /** Número con el que se emitió el recibo de un pago ya registrado. */
+    public int numeroRecibo(Integer idPago) {
+        Pago p = pagoDAO.read(idPago);
+        requerido(p != null, "El pago indicado no existe.");
+        return numeroDe(p);
+    }
+
+    private static int numeroDe(Pago p) {
+        return p.getNumeroRecibo() != null ? p.getNumeroRecibo() : p.getId();
     }
 
     // ---------- cobros mensuales ----------
@@ -218,7 +235,8 @@ public class PagoServicio {
     private FilaPago fila(Pago p, Contrato c, String direccion, List<PersonaVista> inquilinos, int diasAtraso, BigDecimal punitorio) {
         YearMonth periodo = YearMonth.from(p.getPeriodo());
         return new FilaPago(p.getId(), c.getId(), direccion, inquilinos, periodo.toString(), textoPeriodo(periodo),
-                p.getFechaVencimiento(), p.getMonto(), diasAtraso, punitorio, p.getMonto().add(punitorio), p.getFecha(), p.getMedioPago());
+                p.getFechaVencimiento(), p.getMonto(), diasAtraso, punitorio, p.getMonto().add(punitorio), p.getFecha(), p.getMedioPago(),
+                p.getNumeroRecibo());
     }
 
     private Contrato contrato(Integer id) {

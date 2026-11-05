@@ -1,5 +1,6 @@
 package com.ubikar.servicio;
 
+import com.ubikar.config.ReglasDeCobro;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -13,7 +14,7 @@ import java.time.temporal.ChronoUnit;
  */
 public final class Punitorio {
 
-    public static final BigDecimal TASA_DIARIA = new BigDecimal("0.01");
+    public static final BigDecimal TASA_DIARIA = ReglasDeCobro.TASA_PUNITORIO_DIARIA;
 
     public record Mora(int diasAtraso, BigDecimal punitorio) {
     }

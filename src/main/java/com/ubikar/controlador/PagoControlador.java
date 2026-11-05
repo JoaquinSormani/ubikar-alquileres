@@ -1,10 +1,10 @@
 package com.ubikar.controlador;
 
+import com.ubikar.dto.PagoRegistradoDTO;
 import com.ubikar.modelo.Pago;
 import com.ubikar.servicio.PagoServicio;
 import com.ubikar.servicio.SolicitudPago;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -40,19 +40,9 @@ public class PagoControlador {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> registrar(@RequestBody SolicitudPago solicitud) {
+    public ResponseEntity<PagoRegistradoDTO> registrar(@RequestBody SolicitudPago solicitud) {
         Pago p = pagoServicio.registrar(solicitud);
-        Map<String, Object> respuesta = new LinkedHashMap<>();
-        respuesta.put("id", p.getId());
-        respuesta.put("idContrato", p.getIdContrato());
-        respuesta.put("periodo", p.getPeriodo());
-        respuesta.put("fechaPago", p.getFecha());
-        respuesta.put("monto", p.getMonto());
-        respuesta.put("diasAtraso", p.getDiasAtraso());
-        respuesta.put("punitorio", p.getPunitorio());
-        respuesta.put("total", p.getMonto().add(p.getPunitorio()));
-        respuesta.put("recibo", "/api/pagos/" + p.getId() + "/recibo");
-        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        return ResponseEntity.status(HttpStatus.CREATED).body(PagoRegistradoDTO.de(p));
     }
 
     @GetMapping("/{id}/recibo")
@@ -60,7 +50,7 @@ public class PagoControlador {
         byte[] pdf = pagoServicio.recibo(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(pagoServicio.contenidoRecibo()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"recibo-" + String.format("%08d", id) + ".pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"recibo-" + String.format("%08d", pagoServicio.numeroRecibo(id)) + ".pdf\"")
                 .body(pdf);
     }
 

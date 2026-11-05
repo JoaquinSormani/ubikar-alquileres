@@ -13,7 +13,7 @@
 body::before {
   background:
     linear-gradient(165deg, rgba(242, 235, 227, 0.6) 0%, rgba(242, 235, 227, 0.62) 100%),
-    url("assets/fondo-toscana.jpg") center 60% / cover no-repeat;
+    url("../assets/fondo-toscana.jpg") center 60% / cover no-repeat;
   filter: blur(22px) saturate(108%);
 }
 

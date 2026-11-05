@@ -16,6 +16,7 @@ public class Pago {
     private BigDecimal punitorio = BigDecimal.ZERO;
     private EstadoPago estado = EstadoPago.PENDIENTE;
     private MedioPago medioPago;
+    private Integer numeroRecibo;        // correlativo: se asigna al registrar el pago (null mientras está pendiente)
 
     public Integer getId() {
         return id;
@@ -55,6 +56,14 @@ public class Pago {
 
     public void setMedioPago(MedioPago medioPago) {
         this.medioPago = medioPago;
+    }
+
+    public Integer getNumeroRecibo() {
+        return numeroRecibo;
+    }
+
+    public void setNumeroRecibo(Integer numeroRecibo) {
+        this.numeroRecibo = numeroRecibo;
     }
 
     public LocalDate getFecha() {

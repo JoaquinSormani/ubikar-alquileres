@@ -1,8 +1,5 @@
 "use strict";
 
-const API_BASE = "http://localhost:8081";
-const API = `${API_BASE}/api`;
-
 const PASOS = ["Propiedad", "Características", "Propietario"];
 // Zonas típicas que se ofrecen para agregar con un toque (cada una arranca con cantidad 1).
 const PRESETS = ["Dormitorio", "Baño", "Cocina", "Living"];

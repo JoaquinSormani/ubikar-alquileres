@@ -1,8 +1,5 @@
 "use strict";
 
-const API_BASE = "http://localhost:8081";
-const API = `${API_BASE}/api`;
-
 const MEDIOS = [["EFECTIVO", "Efectivo"], ["TRANSFERENCIA", "Transferencia"], ["TARJETA_CREDITO", "Tarjeta de crédito"]];
 const ETIQUETA_MEDIO = Object.fromEntries(MEDIOS);
 const $ = (id) => document.getElementById(id);
@@ -105,7 +102,7 @@ function filaPendiente(f) {
 
 function filaRealizada(f) {
   const tr = el("tr");
-  tr.append(celda(fechaTexto(f.fechaPago)), celda(quien(f)), celda(f.direccion), celda(capitalizar(f.periodoTexto)),
+  tr.append(celda(String(f.numeroRecibo ?? f.idPago).padStart(8, "0")), celda(fechaTexto(f.fechaPago)), celda(quien(f)), celda(f.direccion), celda(capitalizar(f.periodoTexto)),
     celda(ETIQUETA_MEDIO[f.medioPago] || "—"));
   const total = [el("span", "", dinero.format(f.total))];
   if (f.diasAtraso > 0) total.push(el("span", "pago__sub pago__mora", `incluye ${dinero.format(f.punitorio)} de punitorio`));
@@ -114,7 +111,7 @@ function filaRealizada(f) {
   recibo.href = `${API}/pagos/${f.idPago}/recibo`;
   recibo.target = "_blank";
   recibo.rel = "noopener";
-  recibo.setAttribute("aria-label", `Ver el recibo de ${f.periodoTexto} de ${nombres(f.inquilinos)}`);
+  recibo.setAttribute("aria-label", `Ver el recibo N.º ${f.numeroRecibo ?? f.idPago}, ${f.periodoTexto} de ${nombres(f.inquilinos)}`);
   tr.append(celda([recibo], "pago__num"));
   return tr;
 }
@@ -265,9 +262,25 @@ async function registrar(evento) {
   }
 }
 
+// El cuadro de "Pago registrado" se achica, en bloque y solo lo necesario, para entrar en la ventana sin desplazarse.
+function ajustarAlto() {
+  const bloque = $("cobroExito");
+  const dialogo = $("cobroDialog");
+  if (bloque.hidden) return;
+  bloque.style.zoom = "";
+  const natural = dialogo.scrollHeight;
+  const propio = bloque.offsetHeight;
+  const libre = window.innerHeight - 24;
+  if (natural <= libre || propio === 0) return;
+  const factor = Math.max(0.55, (libre - (natural - propio)) / propio);
+  bloque.style.zoom = factor.toFixed(3);
+}
+
+window.addEventListener("resize", ajustarAlto);
+
 function mostrarExito(respuesta) {
   const f = filaEnCobro;
-  const numero = String(respuesta.id).padStart(8, "0");
+  const numero = String(respuesta.numeroRecibo ?? respuesta.id).padStart(8, "0");
   const conMora = respuesta.diasAtraso > 0;
   $("exitoTitulo").textContent = `Pago registrado · Recibo N.º ${numero}`;
   $("exitoDetalle").textContent = conMora
@@ -301,6 +314,7 @@ function mostrarExito(respuesta) {
   }
   $("cobroForm").hidden = true;
   $("cobroExito").hidden = false;
+  ajustarAlto();
   $("exitoTitulo").focus();
 }
 

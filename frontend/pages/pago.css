@@ -171,12 +171,41 @@
   white-space: nowrap;
 }
 
+/* ---------- botón Cobrar: al apoyar el mouse se levanta apenas y gana sombra (efecto sobrio) ---------- */
+
+.pago__tabla .btn--primary {
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background 180ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pago__tabla .btn--primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: linear-gradient(180deg, #a9573d 0%, #9c4c33 58%, #8f432b 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 10px 18px -8px rgba(143, 70, 48, 0.75);
+  }
+
+  .pago__tabla .btn--primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.2),
+      0 3px 8px -6px rgba(143, 70, 48, 0.6);
+  }
+}
+
+.pago__tabla .btn--primary:focus-visible {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 3px rgba(168, 88, 63, 0.35);
+}
+
 /* ---------- cuadro para cobrar ---------- */
 
 .cobro {
-  width: min(520px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  padding: 26px 26px 22px;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 24px);
+  padding: 24px 28px 22px;
   border: 1px solid var(--vidrio-borde, var(--line));
   border-radius: 24px;
   background: var(--paper-raised, #fffaf5);
@@ -198,7 +227,7 @@
 .cobro__titulo {
   margin: 0 0 6px;
   font-family: var(--font-display);
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.25;
   color: var(--wine);
@@ -217,6 +246,16 @@
 .cobro__campos {
   display: grid;
   gap: 16px;
+}
+
+.cobro__campos .field,
+.cobro__campos .radios {
+  margin: 0;
+}
+
+.cobro .field__input {
+  padding-top: 11px;
+  padding-bottom: 11px;
 }
 
 .cobro__error {
@@ -248,19 +287,27 @@
   margin: 0 auto;
 }
 
+/* los tres medios de pago en una sola fila, para que el cuadro entre sin desplazarse */
 .cobro .radios--lista .radios__opciones {
-  grid-template-columns: 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .cobro .radio {
-  padding: 12px 14px;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 11px 12px;
+}
+
+.cobro .radio input {
+  margin: 0;
 }
 
 /* cuenta del cobro */
 .pago__calculo {
   margin: 18px 0 0;
-  padding: 14px 18px;
+  padding: 12px 18px;
   border: 1.5px solid var(--line);
   border-radius: 14px;
   background: rgba(255, 253, 251, 0.6);
@@ -270,7 +317,8 @@
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 5px 0;
+  padding: 6px 0;
+  line-height: 1.35;
 }
 
 .pago__fila dt {
@@ -285,8 +333,8 @@
 }
 
 .pago__fila--total {
-  margin-top: 6px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
   border-top: 1.5px solid var(--line);
 }
 
@@ -316,6 +364,108 @@
   }
 }
 
+/* pantallas bajas: se recortan los espacios, sin amontonar, para que no haga falta desplazarse */
+@media (max-height: 520px) {
+  .cobro {
+    padding: 18px 26px 16px;
+  }
+
+  .cobro__resumen {
+    margin-bottom: 12px;
+  }
+
+  .cobro__campos {
+    gap: 12px;
+  }
+
+  .cobro .field__input {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .cobro .radio {
+    min-height: 42px;
+    padding: 8px 12px;
+  }
+
+  .pago__calculo {
+    margin-top: 12px;
+    padding: 8px 16px;
+  }
+
+  .pago__fila {
+    padding: 4px 0;
+  }
+
+  .pago__fila--total {
+    margin-top: 6px;
+    padding-top: 10px;
+  }
+
+  .cobro__acciones {
+    margin-top: 14px;
+  }
+}
+
+/* pantallas muy bajas (hasta 460 px): se ajusta un poco más, siempre sin desplazarse */
+@media (max-height: 460px) {
+  .cobro {
+    padding: 12px 22px 10px;
+  }
+
+  .cobro__titulo {
+    font-size: 1.2rem;
+  }
+
+  .cobro__resumen {
+    margin-bottom: 8px;
+  }
+
+  .cobro__campos {
+    gap: 8px;
+  }
+
+  .cobro .field__input {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .cobro .radio {
+    min-height: 36px;
+    padding: 5px 10px;
+  }
+
+  .pago__calculo {
+    margin-top: 8px;
+    padding: 5px 14px;
+  }
+
+  .pago__fila {
+    padding: 2px 0;
+  }
+
+  .pago__fila--total {
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+
+  .cobro__acciones {
+    margin-top: 10px;
+  }
+
+  .cobro .btn {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}
+
+/* celular: los medios de pago vuelven a apilarse */
+@media (max-width: 560px) {
+  .cobro .radios--lista .radios__opciones {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .pago__barra {
     flex-direction: column;
@@ -331,5 +481,12 @@
 @media (prefers-reduced-motion: reduce) {
   .cobro[open] {
     animation-duration: 1ms;
+  }
+
+  .pago__tabla .btn--primary,
+  .pago__tabla .btn--primary:hover:not(:disabled),
+  .pago__tabla .btn--primary:active:not(:disabled) {
+    transform: none;
+    transition: none;
   }
 }

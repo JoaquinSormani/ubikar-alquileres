@@ -122,6 +122,7 @@ CREATE TABLE `ubikar`.`mantenimiento` (
 
 -- Un cobro por contrato y por mes: `periodo` es el primer dia del mes que se paga.
 -- `fecha` es la fecha en que se pago (NULL mientras el cobro esta PENDIENTE).
+-- `numeroRecibo` es correlativo y se asigna al cobrar, en el orden en que se paga (NULL mientras esta PENDIENTE).
 CREATE TABLE `ubikar`.`pago` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `idContrato` INT NOT NULL,
@@ -134,8 +135,10 @@ CREATE TABLE `ubikar`.`pago` (
   `punitorio` DECIMAL(12,2) NOT NULL DEFAULT 0,
   `estado` VARCHAR(20) NOT NULL,
   `medioPago` VARCHAR(20) NULL,
+  `numeroRecibo` INT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_pago_periodo` (`idContrato`, `periodo`),
+  UNIQUE KEY `uq_pago_recibo` (`numeroRecibo`),
   FOREIGN KEY (`idContrato`) REFERENCES `ubikar`.`contrato` (`id`));
 
 CREATE TABLE `ubikar`.`liquidacion` (

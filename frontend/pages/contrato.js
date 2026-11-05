@@ -1,8 +1,5 @@
 "use strict";
 
-const API_BASE = "http://localhost:8081";
-const API = `${API_BASE}/api`;
-
 const PASOS = ["Propiedad", "Inquilinos", "Garantía", "Condiciones", "Inventario", "Revisión"];
 const TIPOS_GARANTIA = [
   ["FIADOR_SOLIDARIO", "Fiador solidario"],

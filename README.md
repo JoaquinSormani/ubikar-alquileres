@@ -8,7 +8,7 @@ Documentacion (relato, requerimientos, vision, casos de uso, BPMN, modelo de dom
 
 - **Backend**: Java 17, Spring Boot 3.5 (`@RestController`), Maven.
 - **Persistencia**: SQL2o + MySQL. Patron **DAO** (`InquilinoDAO`, etc.) sobre un **Singleton** de conexion (`Sql2oDAO`).
-- **Frontend**: HTML/JS plano (carpeta `frontend/`) que consume la API REST via `fetch()`, con CORS habilitado en el backend (`@CrossOrigin`).
+- **Frontend**: HTML/JS plano (carpeta `frontend/`, organizada en `pages/`, `components/`, `services/` y `styles/`: ver `ARQUITECTURA.md`) que consume la API REST via `fetch()`, con CORS habilitado en el backend (`@CrossOrigin`).
 - Arquitectura en capas: `modelo` (dominio), `dao` (persistencia), `controlador` (presentacion/REST).
 
 ## Base de datos
@@ -59,13 +59,13 @@ Flujo: `contrato.html` (6 pasos) -> `POST /api/contratos` -> `ContratoServicio` 
 Ya esta disponible para todos:
 - Las 12 clases del modelo de dominio (`modelo/`) y sus tablas (`bd_ubikar.sql`).
 - Un DAO con CRUD completo por entidad (`dao/`): Propietario, Inquilino, Garante, Propiedad, Contrato (con `vincularInquilino/Garante`), Inventario, RenglonInventario, Documentacion, **Pago, Liquidacion y Mantenimiento** (con `selectByContrato`, `selectByEstado`, `selectByPago`, etc.). `Sql2oDAO` es el Singleton de conexion.
-- Un caso de uso completo como referencia: `ContratoControlador` -> `ContratoServicio` -> DAOs (+ `frontend/contrato.html`).
+- Un caso de uso completo como referencia: `ContratoControlador` -> `ContratoServicio` -> DAOs (+ `frontend/pages/contrato.html`).
 
 Como armar un caso de uso nuevo (misma estructura en capas):
 1. `controlador/`: endpoint REST que recibe el pedido y traduce errores a HTTP (ver `ContratoControlador`).
 2. `servicio/`: reglas de negocio y validaciones; lanza `IllegalArgumentException` con un mensaje claro cuando los datos no sirven.
 3. `dao/`: solo SQL. Para guardar varias cosas juntas, los DAO tienen `insert(Connection, X)` y `update(Connection, X)`: abrir `Sql2oDAO.getSql2o().beginTransaction()`, usar esas variantes y cerrar con `con.commit(false)`; si algo falla, todo se revierte solo (ver `ContratoServicio.registrar`).
-4. `frontend/`: pagina HTML/JS que consume la API, reutilizando `portal.css` para mantener la identidad de marca.
+4. `frontend/`: pagina HTML/JS que consume la API, reutilizando `styles/portal.css` para mantener la identidad de marca.
 5. Tests que no necesiten la base en `src/test` (ver `documento/`), asi `mvn package` no depende de MySQL.
 
 Convenciones para no pisarnos:

@@ -4,6 +4,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -11,16 +12,21 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
 import com.ubikar.modelo.MedioPago;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 
 /**
  * Recibo de pago de alquiler en PDF. Es un comprobante propio de UBIKAR: no es una factura ni un
  * comprobante fiscal electrónico, y así lo aclara el pie del documento.
+ *
+ * Usa la tipografía de la web (Playfair Display para los títulos y DM Sans para el resto), el logo en el
+ * encabezado y el logo en gris como marca de agua al centro de la página.
  */
 public class ReciboPdf implements GeneradorRecibo {
 
@@ -38,28 +44,29 @@ public class ReciboPdf implements GeneradorRecibo {
     public byte[] generar(DatosRecibo d) {
         try (ByteArrayOutputStream salida = new ByteArrayOutputStream()) {
             Document documento = new Document(PageSize.A4, 54, 54, 54, 54);
-            PdfWriter.getInstance(documento, salida);
+            PdfWriter escritor = PdfWriter.getInstance(documento, salida);
+            escritor.setPageEvent(marcaDeAgua(recurso("/img/marca-agua-ubikar.png")));
             documento.addTitle("Recibo de pago N° " + numero(d));
             documento.addAuthor("UBIKAR Propiedades");
             documento.open();
 
-            BaseFont base = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, false);
-            BaseFont negrita = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, false);
+            BaseFont base = fuente("DMSans-Regular.ttf", BaseFont.HELVETICA);
+            BaseFont negrita = fuente("DMSans-Bold.ttf", BaseFont.HELVETICA_BOLD);
+            BaseFont display = fuente("PlayfairDisplay-Bold.ttf", BaseFont.HELVETICA_BOLD);
             Font normal = new Font(base, 10.5f, Font.NORMAL, Color.BLACK);
             Font gris = new Font(base, 9, Font.NORMAL, GRIS);
             Font fuerte = new Font(negrita, 10.5f, Font.NORMAL, Color.BLACK);
 
-            documento.add(cabecera(base, negrita, d));
+            documento.add(cabecera(base, negrita, display, d));
             documento.add(espacio(14));
 
             documento.add(datos(normal, fuerte, gris, d));
             documento.add(espacio(14));
 
-            documento.add(detalle(normal, fuerte, d));
-            documento.add(espacio(10));
+            documento.add(detalle(normal, fuerte, new Font(negrita, 13, Font.NORMAL, TERRACOTA), d));
+            documento.add(espacio(12));
 
-            Paragraph letras = new Paragraph("Son pesos " + Formato.montoALetras(d.total()).toLowerCase() + ".", new Font(base, 9.5f, Font.ITALIC, GRIS));
-            documento.add(letras);
+            documento.add(new Paragraph("Son pesos " + Formato.montoALetras(d.total()).toLowerCase() + ".", new Font(base, 10, Font.NORMAL, Color.BLACK)));
 
             documento.add(espacio(40));
             documento.add(firma(gris));
@@ -76,6 +83,47 @@ public class ReciboPdf implements GeneradorRecibo {
         }
     }
 
+    // ---------- recursos ----------
+
+    private static byte[] recurso(String ruta) {
+        try (InputStream in = ReciboPdf.class.getResourceAsStream(ruta)) {
+            return in == null ? null : in.readAllBytes();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** La fuente incluida en el proyecto; si faltara el archivo, usa la fuente estándar de respaldo. */
+    private static BaseFont fuente(String archivo, String respaldo) throws DocumentException, IOException {
+        byte[] ttf = recurso("/fonts/" + archivo);
+        if (ttf != null) {
+            return BaseFont.createFont(archivo, BaseFont.IDENTITY_H, BaseFont.EMBEDDED, true, ttf, null);
+        }
+        return BaseFont.createFont(respaldo, BaseFont.CP1252, false);
+    }
+
+    /** Logo de UBIKAR en gris, grande y al medio de la página, por debajo del contenido. */
+    private static PdfPageEventHelper marcaDeAgua(byte[] imagen) {
+        return new PdfPageEventHelper() {
+            @Override
+            public void onEndPage(PdfWriter escritor, Document documento) {
+                if (imagen == null) {
+                    return;
+                }
+                try {
+                    Image marca = Image.getInstance(imagen);
+                    marca.scaleToFit(400, 400);
+                    Rectangle pagina = documento.getPageSize();
+                    marca.setAbsolutePosition((pagina.getWidth() - marca.getScaledWidth()) / 2,
+                            (pagina.getHeight() - marca.getScaledHeight()) / 2);
+                    escritor.getDirectContentUnder().addImage(marca);
+                } catch (DocumentException | IOException e) {
+                    // sin marca de agua el recibo sigue siendo válido
+                }
+            }
+        };
+    }
+
     private static String numero(DatosRecibo d) {
         return String.format("%08d", d.numero());
     }
@@ -86,7 +134,7 @@ public class ReciboPdf implements GeneradorRecibo {
         return p;
     }
 
-    private PdfPTable cabecera(BaseFont base, BaseFont negrita, DatosRecibo d) throws DocumentException {
+    private PdfPTable cabecera(BaseFont base, BaseFont negrita, BaseFont display, DatosRecibo d) throws DocumentException, IOException {
         PdfPTable t = new PdfPTable(new float[] {3f, 2f});
         t.setWidthPercentage(100);
         PdfPCell izquierda = new PdfPCell();
@@ -94,8 +142,15 @@ public class ReciboPdf implements GeneradorRecibo {
         izquierda.setBorderColor(TERRACOTA);
         izquierda.setBorderWidthBottom(2f);
         izquierda.setPaddingBottom(10);
-        izquierda.addElement(new Paragraph("UBIKAR", new Font(negrita, 24, Font.NORMAL, TERRACOTA)));
-        izquierda.addElement(new Paragraph("Propiedades · San Luis", new Font(base, 9, Font.NORMAL, GRIS)));
+        byte[] logo = recurso("/img/ubikar-logo.png");
+        if (logo != null) {
+            Image imagen = Image.getInstance(logo);
+            imagen.scaleToFit(80, 64);
+            izquierda.addElement(imagen);
+        } else {
+            izquierda.addElement(new Paragraph("UBIKAR", new Font(display, 24, Font.NORMAL, TERRACOTA)));
+            izquierda.addElement(new Paragraph("Propiedades · San Luis", new Font(base, 9, Font.NORMAL, GRIS)));
+        }
         t.addCell(izquierda);
 
         PdfPCell derecha = new PdfPCell();
@@ -103,10 +158,10 @@ public class ReciboPdf implements GeneradorRecibo {
         derecha.setBorderColor(TERRACOTA);
         derecha.setBorderWidthBottom(2f);
         derecha.setPaddingBottom(10);
-        Paragraph titulo = new Paragraph("RECIBO DE PAGO", new Font(negrita, 14, Font.NORMAL, Color.BLACK));
+        Paragraph titulo = new Paragraph("Recibo de pago", new Font(display, 20, Font.NORMAL, TERRACOTA));
         titulo.setAlignment(Element.ALIGN_RIGHT);
         derecha.addElement(titulo);
-        Paragraph nro = new Paragraph("N° " + numero(d), new Font(base, 11, Font.NORMAL, Color.BLACK));
+        Paragraph nro = new Paragraph("N° " + numero(d), new Font(negrita, 11, Font.NORMAL, Color.BLACK));
         nro.setAlignment(Element.ALIGN_RIGHT);
         derecha.addElement(nro);
         Paragraph fecha = new Paragraph("Fecha: " + Formato.fecha(d.fechaEmision()), new Font(base, 9, Font.NORMAL, GRIS));
@@ -140,6 +195,7 @@ public class ReciboPdf implements GeneradorRecibo {
         a.setBorder(Rectangle.BOTTOM);
         a.setBorderColor(LINEA);
         a.setPadding(6);
+        a.setLeading(0f, 1.3f);
         t.addCell(a);
         PdfPCell b = new PdfPCell(new Phrase(valor, fv));
         b.setBorder(Rectangle.BOTTOM);
@@ -148,16 +204,16 @@ public class ReciboPdf implements GeneradorRecibo {
         t.addCell(b);
     }
 
-    private PdfPTable detalle(Font normal, Font fuerte, DatosRecibo d) throws DocumentException {
+    private PdfPTable detalle(Font normal, Font fuerte, Font importeTotal, DatosRecibo d) throws DocumentException {
         PdfPTable t = new PdfPTable(new float[] {4f, 1.6f});
         t.setWidthPercentage(100);
         encabezado(t, "Concepto", false, fuerte);
         encabezado(t, "Importe", true, fuerte);
-        concepto(t, "Alquiler de " + d.periodo() + " (vencía el " + Formato.fecha(d.fechaVencimiento()) + ")", d.alquiler(), normal, false);
+        concepto(t, "Alquiler de " + d.periodo() + " (vencía el " + Formato.fecha(d.fechaVencimiento()) + ")", d.alquiler(), normal, normal, false);
         if (d.diasAtraso() > 0) {
-            concepto(t, "Interés punitorio por mora: " + d.diasAtraso() + (d.diasAtraso() == 1 ? " día" : " días") + " de atraso (1 % diario)", d.punitorio(), normal, false);
+            concepto(t, "Interés punitorio por mora: " + d.diasAtraso() + (d.diasAtraso() == 1 ? " día" : " días") + " de atraso (1 % diario)", d.punitorio(), normal, normal, false);
         }
-        concepto(t, "TOTAL ABONADO", d.total(), fuerte, true);
+        concepto(t, "TOTAL ABONADO", d.total(), fuerte, importeTotal, true);
         return t;
     }
 
@@ -173,13 +229,14 @@ public class ReciboPdf implements GeneradorRecibo {
         t.addCell(c);
     }
 
-    private void concepto(PdfPTable t, String texto, BigDecimal importe, Font f, boolean total) {
-        PdfPCell a = new PdfPCell(new Phrase(texto, f));
+    private void concepto(PdfPTable t, String texto, BigDecimal importe, Font fTexto, Font fImporte, boolean total) {
+        PdfPCell a = new PdfPCell(new Phrase(texto, fTexto));
         a.setBorder(total ? Rectangle.TOP : Rectangle.BOTTOM);
         a.setBorderColor(total ? TERRACOTA : LINEA);
         a.setPadding(7);
+        a.setLeading(0f, 1.3f);
         t.addCell(a);
-        PdfPCell b = new PdfPCell(new Phrase("$ " + Formato.monto(importe), f));
+        PdfPCell b = new PdfPCell(new Phrase("$ " + Formato.monto(importe), fImporte));
         b.setBorder(total ? Rectangle.TOP : Rectangle.BOTTOM);
         b.setBorderColor(total ? TERRACOTA : LINEA);
         b.setPadding(7);
