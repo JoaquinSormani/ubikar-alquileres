@@ -13,7 +13,7 @@ public class Sql2oDAO {
     // Valores por defecto para desarrollo local; cada integrante puede pisarlos con variables de entorno.
     private static final String URL = System.getenv().getOrDefault("UBIKAR_DB_URL", "jdbc:mysql://localhost:3306/ubikar");
     private static final String USER = System.getenv().getOrDefault("UBIKAR_DB_USER", "root");
-    private static final String PASSWORD = System.getenv().getOrDefault("UBIKAR_DB_PASSWORD", "root1234");
+    private static final String PASSWORD = System.getenv().getOrDefault("UBIKAR_DB_PASSWORD", "matu0805");
 
     public static Sql2o getSql2o() {
         if (sql2o == null) {
