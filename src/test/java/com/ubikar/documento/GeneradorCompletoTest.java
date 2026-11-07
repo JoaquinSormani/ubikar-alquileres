@@ -24,7 +24,7 @@ class GeneradorCompletoTest {
 
         // partes
         assertTrue(texto.contains("Entre el/la Sr./Sra. MARIA GIMENEZ, DNI N° 28.555.444, con domicilio en Rivadavia 1080, en adelante el"));
-        assertTrue(texto.contains("el/la Sr./Sra. JUAN PEREZ, DNI 30.111.222, con domicilio real en Belgrano 12, teléfono N° 2664001122, Mail: juan@mail.com, en adelante denominado"));
+        assertTrue(texto.contains("el/la Sr./Sra. JUAN PEREZ, DNI N° 30.111.222, con domicilio real en Belgrano 12, teléfono N° 2664001122, Mail: juan@mail.com, en adelante denominado"));
         // objeto e inventario
         assertTrue(texto.contains("ubicado en la calle Junín 700, Dpto 3, de la Ciudad de San Luis, Provincia de San Luis."));
         assertTrue(texto.contains("Cocina: Anafe (bueno); Mesada (regular): mancha en el borde."));

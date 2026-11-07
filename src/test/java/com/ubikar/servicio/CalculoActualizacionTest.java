@@ -37,18 +37,18 @@ class CalculoActualizacionTest {
     void actualizacionTrimestralIpcConInflacionAcumulada() {
         // Alquiler inicial: $350.000
         // Inflación mensual de 3 meses: 4.2%, 3.5%, 3.0%
-        // Factor esperado: (1 + 0.042) * (1 + 0.035) * (1 + 0.030) = 1.042 * 1.035 * 1.030 = 1.1108151 -> 1.110815
+        // Factor esperado: (1 + 0.042) * (1 + 0.035) * (1 + 0.030) = 1.042 * 1.035 * 1.030 = 1.1108241 -> 1.110824
         BigDecimal factor = CalculoActualizacion.factorIpc(List.of(
                 new BigDecimal("4.2"),
                 new BigDecimal("3.5"),
                 new BigDecimal("3.0")
         ));
-        assertEquals(new BigDecimal("1.110815"), factor);
+        assertEquals(new BigDecimal("1.110824"), factor);
 
-        // Nuevo valor: 350.000 * 1.110815 = 388785.25
+        // Nuevo valor: 350.000 * 1.110824 = 388788.40
         BigDecimal valorActual = new BigDecimal("350000.00");
         BigDecimal nuevoValor = CalculoActualizacion.nuevoValor(valorActual, factor);
-        assertEquals(new BigDecimal("388785.25"), nuevoValor);
+        assertEquals(new BigDecimal("388788.40"), nuevoValor);
 
         // Porcentaje: 11.08%
         assertEquals(new BigDecimal("11.08"), CalculoActualizacion.porcentaje(factor));
@@ -83,8 +83,8 @@ class CalculoActualizacionTest {
     void redondeoDecimalesEnNuevoValor() {
         BigDecimal factor = new BigDecimal("1.123456");
         BigDecimal valorActual = new BigDecimal("12345.67");
-        // 12345.67 * 1.123456 = 13869.81180552 -> redondeo a 2 decimales: 13869.81
-        assertEquals(new BigDecimal("13869.81"), CalculoActualizacion.nuevoValor(valorActual, factor));
+        // 12345.67 * 1.123456 = 13869.81703552 -> redondeo a 2 decimales: 13869.82
+        assertEquals(new BigDecimal("13869.82"), CalculoActualizacion.nuevoValor(valorActual, factor));
     }
 
     @Test
