@@ -14,12 +14,21 @@ import org.sql2o.Connection;
 
 public class RegPropiedad {
 
+    // Una sola alta de propiedad a la vez: evita que dos altas simultáneas repitan la misma dirección.
+    private static final Object CERROJO_ALTAS = new Object();
+
     private final PropietarioDAO propietarioDAO = new PropietarioDAO();
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
     private final CaracteristicaPropiedadDAO caracteristicaDAO = new CaracteristicaPropiedadDAO();
 
     public Propiedad registrar(SolicitudPropiedad s) {
         validar(s);
+        synchronized (CERROJO_ALTAS) {
+            return registrarConCerrojo(s);
+        }
+    }
+
+    private Propiedad registrarConCerrojo(SolicitudPropiedad s) {
         Propietario p = s.getPropietario();
         String direccion = s.getDireccion().trim().replaceAll("\\s+", " ");
 
@@ -64,15 +73,17 @@ public class RegPropiedad {
     private void validar(SolicitudPropiedad s) {
         requerido(s != null && s.getPropietario() != null, "Falta el propietario.");
         Propietario p = s.getPropietario();
-        requerido(hayTexto(p.getNombre()) && hayTexto(p.getApellido()), "Faltan el nombre y el apellido del propietario.");
-        requerido(hayTexto(p.getDni()) && p.getDni().replaceAll("\\D", "").length() >= 7, "El DNI del propietario no es válido.");
-        requerido(hayTexto(p.getDomicilio()), "Falta el domicilio del propietario.");
+        ValidacionPersona.validar(p, "propietario");
         requerido(hayTexto(s.getDireccion()) && s.getDireccion().trim().length() >= 5, "Falta la dirección de la propiedad.");
+        requerido(s.getDireccion().trim().length() <= 200, "La dirección no puede superar los 200 caracteres.");
         validarCaracteristicas(s.getCaracteristicas());
-        p.setDni(p.getDni().replaceAll("\\D", ""));
         if (p.getId() == null) {
             requerido(propietarioDAO.readAll().stream().noneMatch(x -> x.getDni().equals(p.getDni())),
                     "Ya existe un propietario con ese DNI.");
+        } else {
+            requerido(propietarioDAO.read(p.getId()) != null, "El propietario indicado no está registrado.");
+            requerido(propietarioDAO.readAll().stream().noneMatch(x -> x.getDni().equals(p.getDni()) && !x.getId().equals(p.getId())),
+                    "Ya existe otro propietario con ese DNI.");
         }
     }
 

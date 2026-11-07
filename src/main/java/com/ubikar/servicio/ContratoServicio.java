@@ -25,17 +25,27 @@ import com.ubikar.modelo.RenglonInventario;
 import com.ubikar.modelo.TipoDocumento;
 import com.ubikar.modelo.TipoGarantia;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.sql2o.Connection;
 
 public class ContratoServicio {
 
     private static final Path DIRECTORIO_CONTRATOS = Path.of("documentos", "contratos");
     private static final String PLANTILLA_POR_DEFECTO = "estandar";
+    private static final int DURACION_MAXIMA_MESES = 120;
+    private static final int ANTICIPACION_MAXIMA_ANIOS = 5;
+    private static final BigDecimal IMPORTE_MAXIMO = new BigDecimal("1000000000");
+    // Una sola alta de contrato a la vez: así dos altas simultáneas de la misma propiedad no se superponen.
+    private static final Object CERROJO_ALTAS = new Object();
 
     private final PropietarioDAO propietarioDAO = new PropietarioDAO();
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
@@ -60,6 +70,13 @@ public class ContratoServicio {
     public Contrato registrar(SolicitudContrato s) {
         resolverPropietarioYPropiedad(s);
         validar(s);
+        resolverPersonasExistentes(s);
+        synchronized (CERROJO_ALTAS) {
+            return registrarConCerrojo(s);
+        }
+    }
+
+    private Contrato registrarConCerrojo(SolicitudContrato s) {
         GeneradorContrato generador = generadores.get(s.getPlantilla() == null ? PLANTILLA_POR_DEFECTO : s.getPlantilla());
         LocalDate fechaFin = s.getFechaInicio().plusMonths(s.getDuracionMeses()).minusDays(1);
 
@@ -68,8 +85,9 @@ public class ContratoServicio {
             Propietario propietario = s.getPropietario();
             Propiedad propiedad = s.getPropiedad();
 
-            if (contratoDAO.existeContratoSuperpuesto(propiedad.getId(), s.getFechaInicio(), fechaFin)) {
-                throw new IllegalArgumentException("La propiedad ya tiene un contrato vigente en ese período.");
+            Contrato vigente = contratoDAO.contratoSuperpuesto(propiedad.getId(), s.getFechaInicio(), fechaFin);
+            if (vigente != null) {
+                throw new IllegalArgumentException(mensajeContratoSuperpuesto(vigente));
             }
 
             Contrato c = new Contrato();
@@ -80,7 +98,7 @@ public class ContratoServicio {
             c.setPeriodicidadActualizacion(s.getPeriodicidadActualizacion());
             c.setIndiceActualizacion(s.getIndiceActualizacion());
             c.setDestino(s.getDestino());
-            c.setDepositoGarantia(s.getDepositoGarantia() != null ? s.getDepositoGarantia() : s.getValorInicial());
+            c.setDepositoGarantia(depositoEfectivo(s.getDepositoGarantia(), s.getValorInicial()));
             c.setTipoGarantia(s.getTipoGarantia());
             c.setId(contratoDAO.create(con, c));
 
@@ -138,6 +156,18 @@ public class ContratoServicio {
         }
     }
 
+    /** Dice cuál es el contrato que se cruza, para que se pueda encontrar. */
+    static String mensajeContratoSuperpuesto(Contrato vigente) {
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        return "La propiedad ya tiene el contrato N.º " + vigente.getId() + ", vigente del "
+                + vigente.getFechaInicio().format(f) + " al " + vigente.getFechaFin().format(f) + ".";
+    }
+
+    /** Sin depósito (vacío o en 0) se toma un mes de alquiler. */
+    static BigDecimal depositoEfectivo(BigDecimal deposito, BigDecimal valorInicial) {
+        return deposito != null && deposito.signum() > 0 ? deposito : valorInicial;
+    }
+
     public Path documentoDelContrato(Integer idContrato) {
         for (Documentacion d : documentacionDAO.selectByContrato(idContrato)) {
             if (d.getTipo() == TipoDocumento.CONTRATO) {
@@ -167,26 +197,35 @@ public class ContratoServicio {
         validarPersona(s.getPropietario(), "propietario");
 
         requerido(!s.getInquilinos().isEmpty(), "El contrato necesita al menos un inquilino.");
+        Set<String> dnisInquilinos = new HashSet<>();
         for (Inquilino i : s.getInquilinos()) {
             validarPersona(i, "inquilino");
             requerido(!i.getDni().equals(s.getPropietario().getDni()),
                     "El propietario no puede ser inquilino de su propia propiedad.");
+            requerido(dnisInquilinos.add(i.getDni()), "El inquilino con DNI " + i.getDni() + " está repetido en el contrato.");
         }
 
         boolean exigeGarante = s.getTipoGarantia() == TipoGarantia.FIADOR_SOLIDARIO
                 || s.getTipoGarantia() == TipoGarantia.RECIBO_SUELDO;
         requerido(s.getTipoGarantia() != null, "Falta el tipo de garantía.");
         requerido(!exigeGarante || !s.getGarantes().isEmpty(), "Esa garantía requiere al menos un garante.");
+        Set<String> dnisGarantes = new HashSet<>();
         for (Garante g : s.getGarantes()) {
             validarPersona(g, "garante");
+            requerido(dnisGarantes.add(g.getDni()), "El garante con DNI " + g.getDni() + " está repetido en el contrato.");
+            requerido(g.getDetalle() == null || g.getDetalle().length() <= 500, "El detalle del garante no puede superar los 500 caracteres.");
             requerido(s.getInquilinos().stream().noneMatch(i -> i.getDni().equals(g.getDni())),
                     "Un garante no puede ser también inquilino del mismo contrato.");
         }
 
         requerido(s.getFechaInicio() != null, "Falta la fecha de inicio.");
         requerido(!s.getFechaInicio().isBefore(LocalDate.now()), "La fecha de inicio no puede ser anterior a hoy.");
+        requerido(!s.getFechaInicio().isAfter(LocalDate.now().plusYears(ANTICIPACION_MAXIMA_ANIOS)),
+                "La fecha de inicio no puede ser más de " + ANTICIPACION_MAXIMA_ANIOS + " años posterior a hoy.");
         requerido(s.getDuracionMeses() != null && s.getDuracionMeses() >= 1, "La duración debe ser de al menos 1 mes.");
+        requerido(s.getDuracionMeses() <= DURACION_MAXIMA_MESES, "La duración no puede superar los " + DURACION_MAXIMA_MESES + " meses.");
         requerido(s.getValorInicial() != null && s.getValorInicial().signum() > 0, "El valor inicial debe ser mayor a cero.");
+        requerido(s.getValorInicial().compareTo(IMPORTE_MAXIMO) <= 0, "El valor inicial no puede superar $ 1.000.000.000.");
         requerido(s.getPeriodicidadActualizacion() != null && s.getPeriodicidadActualizacion() >= 1
                 && s.getPeriodicidadActualizacion() <= s.getDuracionMeses(),
                 "La periodicidad de actualización debe estar entre 1 mes y la duración del contrato.");
@@ -194,11 +233,18 @@ public class ContratoServicio {
         requerido(s.getDestino() != null, "Falta el destino del inmueble.");
         requerido(s.getDepositoGarantia() == null || s.getDepositoGarantia().signum() >= 0,
                 "El depósito en garantía no puede ser negativo.");
+        requerido(s.getDepositoGarantia() == null || s.getDepositoGarantia().compareTo(IMPORTE_MAXIMO) <= 0,
+                "El depósito en garantía no puede superar $ 1.000.000.000.");
 
         requerido(!s.getRenglones().isEmpty(), "El inventario necesita al menos un elemento.");
         for (RenglonInventario r : s.getRenglones()) {
             requerido(hayTexto(r.getObjeto()) && r.getEstado() != null,
                     "Cada elemento del inventario necesita un nombre y un estado.");
+            requerido(r.getObjeto().length() <= 120, "El nombre de un elemento del inventario no puede superar los 120 caracteres.");
+            requerido(r.getAmbiente() == null || r.getAmbiente().length() <= 80,
+                    "El ambiente de un elemento del inventario no puede superar los 80 caracteres.");
+            requerido(r.getObservaciones() == null || r.getObservaciones().length() <= 255,
+                    "Las observaciones de un elemento del inventario no pueden superar los 255 caracteres.");
         }
 
         String plantilla = s.getPlantilla() == null ? PLANTILLA_POR_DEFECTO : s.getPlantilla();
@@ -206,11 +252,35 @@ public class ContratoServicio {
     }
 
     private void validarPersona(Persona p, String rol) {
-        requerido(hayTexto(p.getNombre()) && hayTexto(p.getApellido()), "Faltan el nombre y el apellido del " + rol + ".");
-        requerido(hayTexto(p.getDni()) && p.getDni().replaceAll("\\D", "").length() >= 7,
-                "El DNI del " + rol + " no es válido.");
-        requerido(hayTexto(p.getDomicilio()), "Falta el domicilio del " + rol + " (se usa en el contrato).");
-        p.setDni(p.getDni().replaceAll("\\D", ""));
+        ValidacionPersona.validar(p, rol);
+    }
+
+    // Una persona ya registrada (mismo DNI) se reutiliza en lugar de duplicarla; un id que no existe se rechaza.
+    private void resolverPersonasExistentes(SolicitudContrato s) {
+        List<Inquilino> inquilinos = inquilinoDAO.readAll();
+        for (Inquilino i : s.getInquilinos()) {
+            if (i.getId() != null) {
+                requerido(inquilinos.stream().anyMatch(x -> x.getId().equals(i.getId())), "El inquilino indicado no está registrado.");
+            }
+            Inquilino conMismoDni = inquilinos.stream().filter(x -> x.getDni().equals(i.getDni())).findFirst().orElse(null);
+            if (conMismoDni != null) {
+                requerido(i.getId() == null || i.getId().equals(conMismoDni.getId()),
+                        "Ya existe otro inquilino registrado con el DNI " + i.getDni() + ".");
+                i.setId(conMismoDni.getId());
+            }
+        }
+        List<Garante> garantes = garanteDAO.readAll();
+        for (Garante g : s.getGarantes()) {
+            if (g.getId() != null) {
+                requerido(garantes.stream().anyMatch(x -> x.getId().equals(g.getId())), "El garante indicado no está registrado.");
+            }
+            Garante conMismoDni = garantes.stream().filter(x -> x.getDni().equals(g.getDni())).findFirst().orElse(null);
+            if (conMismoDni != null) {
+                requerido(g.getId() == null || g.getId().equals(conMismoDni.getId()),
+                        "Ya existe otro garante registrado con el DNI " + g.getDni() + ".");
+                g.setId(conMismoDni.getId());
+            }
+        }
     }
 
     private static boolean hayTexto(String valor) {

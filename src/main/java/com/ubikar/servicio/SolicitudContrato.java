@@ -51,7 +51,7 @@ public class SolicitudContrato {
     }
 
     public void setInquilinos(List<Inquilino> inquilinos) {
-        this.inquilinos = inquilinos;
+        this.inquilinos = inquilinos == null ? new ArrayList<>() : inquilinos;
     }
 
     public List<Garante> getGarantes() {
@@ -59,7 +59,7 @@ public class SolicitudContrato {
     }
 
     public void setGarantes(List<Garante> garantes) {
-        this.garantes = garantes;
+        this.garantes = garantes == null ? new ArrayList<>() : garantes;
     }
 
     public LocalDate getFechaInicio() {
@@ -131,7 +131,7 @@ public class SolicitudContrato {
     }
 
     public void setRenglones(List<RenglonInventario> renglones) {
-        this.renglones = renglones;
+        this.renglones = renglones == null ? new ArrayList<>() : renglones;
     }
 
     public String getPlantilla() {

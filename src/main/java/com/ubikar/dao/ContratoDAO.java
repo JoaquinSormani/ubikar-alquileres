@@ -117,16 +117,16 @@ public class ContratoDAO {
                 .executeUpdate();
     }
 
-    public boolean existeContratoSuperpuesto(Integer idPropiedad, LocalDate inicio, LocalDate fin) {
-        String sql = "SELECT COUNT(*) FROM contrato WHERE idPropiedad = :idPropiedad "
-                + "AND fechaInicio <= :fin AND fechaFin >= :inicio";
+    /** El contrato de la propiedad que se cruza con el período dado, o null si no hay ninguno. */
+    public Contrato contratoSuperpuesto(Integer idPropiedad, LocalDate inicio, LocalDate fin) {
+        String sql = "SELECT * FROM contrato WHERE idPropiedad = :idPropiedad "
+                + "AND fechaInicio <= :fin AND fechaFin >= :inicio ORDER BY fechaInicio LIMIT 1";
         try (Connection con = Sql2oDAO.getSql2o().open()) {
-            Integer cantidad = con.createQuery(sql)
+            return con.createQuery(sql)
                     .addParameter("idPropiedad", idPropiedad)
                     .addParameter("inicio", inicio)
                     .addParameter("fin", fin)
-                    .executeScalar(Integer.class);
-            return cantidad != null && cantidad > 0;
+                    .executeAndFetchFirst(Contrato.class);
         }
     }
 }

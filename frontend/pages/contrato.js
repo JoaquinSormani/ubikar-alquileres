@@ -368,8 +368,10 @@ function actualizarDerivados() {
     partes.push(`El contrato finaliza el ${textoFecha(fechaFin(inicio, duracion))}.`);
   }
   if (valor > 0) {
-    const deposito = depositoTexto !== "" ? Number(depositoTexto) : valor;
-    partes.push(`Depósito en garantía: ${dinero.format(deposito)}${depositoTexto === "" ? " (un mes de alquiler)" : ""}.`);
+    // Vacío o en 0: el depósito es un mes de alquiler.
+    const unMes = depositoTexto === "" || Number(depositoTexto) === 0;
+    const deposito = unMes ? valor : Number(depositoTexto);
+    partes.push(`Depósito en garantía: ${dinero.format(deposito)}${unMes ? " (un mes de alquiler)" : ""}.`);
   }
   $("derivados").textContent = partes.join(" ");
   $("derivados").hidden = partes.length === 0;
@@ -692,7 +694,7 @@ function armarSolicitud() {
     periodicidadActualizacion: Number($("periodicidad").value),
     indiceActualizacion: valorRadio("indice"),
     destino: valorRadio("destino"),
-    depositoGarantia: deposito === "" ? null : Number(deposito),
+    depositoGarantia: deposito === "" || Number(deposito) === 0 ? null : Number(deposito),
     tipoGarantia: valorRadio("tipoGarantia"),
     renglones: renglones(),
     plantilla: valorRadio("plantilla"),

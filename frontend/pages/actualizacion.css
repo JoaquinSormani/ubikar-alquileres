@@ -36,6 +36,26 @@
   color: #7a5316;
 }
 
+/* estado de una actualización que todavía no se aplicó */
+.act__estado {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.act__estado--programada {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.act__estado--espera {
+  background: rgba(228, 234, 241, 0.9);
+  color: var(--navy, #2e4157);
+}
+
 .act__aumento {
   color: var(--ok);
   font-weight: 600;

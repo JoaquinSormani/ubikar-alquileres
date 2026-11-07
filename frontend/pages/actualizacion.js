@@ -8,7 +8,8 @@
  * al inquilino por WhatsApp (el contrato dice que la corredora le comunica el nuevo valor).
  *
  * Contrato con el backend (ver docs/Actualizar_Valor_Alquiler_Guia.md):
- *   GET /api/actualizaciones/panel -> { aplicadas: [...] }   (el filtro por mes se hace acá, con periodoDesde)
+ *   GET /api/actualizaciones/panel -> { aplicadas: [...], proximas: [...] }
+ *   (el filtro por mes se hace acá, con periodoDesde; las próximas se ven al elegir un mes)
  *
  * Mientras el servidor no tenga esa ruta (responde 404), la pantalla funciona en MODO DEMOSTRACIÓN con datos de
  * ejemplo. Apenas el backend la implemente, pasa sola a usar los datos reales.
@@ -19,13 +20,15 @@ const $ = (id) => document.getElementById(id);
 const dinero = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 const decimal = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-let panel = { aplicadas: [] };
+let panel = { aplicadas: [], proximas: [] };
 let demo = false;
 
 // ---------- datos de demostración (personas y direcciones inventadas; índices reales del BCRA a noviembre de 2026) ----------
 
 const CAMILA = { nombre: "Camila", apellido: "Rojas", dni: "30111222", telefono: "2664111222" };
 const DIEGO = { nombre: "Diego", apellido: "Pereyra", dni: "28333444", telefono: "" };
+const JUAN = { nombre: "Juan", apellido: "Perez", dni: "30555123", telefono: "2664001122" };
+const VALERIA = { nombre: "Valeria", apellido: "Sosa", dni: "33555666", telefono: "2664333444" };
 
 const DEMO = {
   aplicadas: [
@@ -35,6 +38,14 @@ const DEMO = {
       periodoDesde: "2026-10", periodicidad: 3, valorAnterior: 180000, valorNuevo: 190455.48, porcentaje: 5.81 },
     { id: 1, fecha: "2026-07-15", idContrato: 101, direccion: "Belgrano 1250, 2.º B", inquilinos: [CAMILA], indice: "ICL",
       periodoDesde: "2026-07", periodicidad: 3, valorAnterior: 250000, valorNuevo: 275818.25, porcentaje: 10.33 },
+  ],
+  proximas: [
+    { idContrato: 103, direccion: "Junin 700, depto 3", inquilinos: [JUAN], indice: "ICL", periodicidad: 3,
+      fechaAjuste: "2026-12-01", periodoDesde: "2026-12", valorActual: 350621.31, estado: "PROGRAMADA" },
+    { idContrato: 104, direccion: "San Martín 95, local 3", inquilinos: [VALERIA], indice: "IPC", periodicidad: 3,
+      fechaAjuste: "2026-12-01", periodoDesde: "2026-12", valorActual: 320000, estado: "PROGRAMADA" },
+    { idContrato: 102, direccion: "Colón 480, depto 1", inquilinos: [DIEGO], indice: "IPC", periodicidad: 3,
+      fechaAjuste: "2027-01-01", periodoDesde: "2027-01", valorActual: 190455.48, estado: "PROGRAMADA" },
   ],
 };
 
@@ -130,19 +141,35 @@ function filaAplicada(a) {
   tr.append(celda(mesTexto(a.periodoDesde)));
   tr.append(celda(dinero.format(a.valorAnterior), "pago__num"));
   tr.append(celda([el("span", "", dinero.format(a.valorNuevo)), el("span", "pago__sub act__aumento", `+ ${porcentaje(a.porcentaje)}${a.periodicidad ? ` · ${nombrePeriodo(a.periodicidad)}` : ""}`)], "pago__num"));
+  tr.append(celdaAviso(a.inquilinos, (nombre) => `Hola ${nombre}, te avisamos que desde ${mesTexto(a.periodoDesde)} el alquiler de ${a.direccion} `
+    + `pasa a ser de ${dinero.format(a.valorNuevo)} (aumento del ${porcentaje(a.porcentaje)} por ${a.indice}). — UBIKAR Propiedades`));
+  return tr;
+}
+
+// Botón "Avisar": abre WhatsApp con el mensaje armado (no se envía solo). Sin teléfono, lo aclara.
+function celdaAviso(inquilinos, armarMensaje) {
+  const conTelefono = inquilinos.find((i) => telefonoWhatsApp(i.telefono));
+  if (!conTelefono) return celda([el("span", "pago__sub", "sin teléfono")], "pago__num");
   const avisar = el("a", "btn btn--ghost", "Avisar");
-  const conTelefono = a.inquilinos.find((i) => telefonoWhatsApp(i.telefono));
-  if (conTelefono) {
-    const mensaje = `Hola ${conTelefono.nombre}, te avisamos que desde ${mesTexto(a.periodoDesde)} el alquiler de ${a.direccion} `
-      + `pasa a ser de ${dinero.format(a.valorNuevo)} (aumento del ${porcentaje(a.porcentaje)} por ${a.indice}). — UBIKAR Propiedades`;
-    avisar.href = `https://wa.me/${telefonoWhatsApp(conTelefono.telefono)}?text=${encodeURIComponent(mensaje)}`;
-    avisar.target = "_blank";
-    avisar.rel = "noopener";
-    avisar.setAttribute("aria-label", `Avisar por WhatsApp a ${conTelefono.nombre} ${conTelefono.apellido} el nuevo valor`);
-    tr.append(celda([avisar], "pago__num"));
-  } else {
-    tr.append(celda([el("span", "pago__sub", "sin teléfono")], "pago__num"));
-  }
+  avisar.href = `https://wa.me/${telefonoWhatsApp(conTelefono.telefono)}?text=${encodeURIComponent(armarMensaje(conTelefono.nombre))}`;
+  avisar.target = "_blank";
+  avisar.rel = "noopener";
+  avisar.setAttribute("aria-label", `Avisar por WhatsApp a ${conTelefono.nombre} ${conTelefono.apellido}`);
+  return celda([avisar], "pago__num");
+}
+
+// Una actualización que todavía no se aplicó: se muestra el valor actual y cuándo se va a calcular el nuevo.
+function filaProxima(p) {
+  const espera = p.estado === "ESPERANDO_INDICE";
+  const tr = el("tr");
+  tr.append(celda([el("span", "", fechaTexto(p.fechaAjuste)), el("span", "pago__sub", espera ? "esperando el índice" : "se calcula ese día")]),
+    celda(quien(p)), celda(p.direccion),
+    celda([el("span", `act__indice act__indice--${p.indice.toLowerCase()}`, p.indice)]), celda(mesTexto(p.periodoDesde)));
+  tr.append(celda(dinero.format(p.valorActual), "pago__num"));
+  tr.append(celda([el("span", espera ? "act__estado act__estado--espera" : "act__estado act__estado--programada", espera ? "Esperando el índice" : "Programada"),
+    ...(p.periodicidad ? [el("span", "pago__sub", `actualización ${nombrePeriodo(p.periodicidad)}`)] : [])], "pago__num"));
+  tr.append(celdaAviso(p.inquilinos, (nombre) => `Hola ${nombre}, te avisamos que desde ${mesTexto(p.periodoDesde)} el alquiler de ${p.direccion} `
+    + `se actualiza por ${p.indice} (${nombrePeriodo(p.periodicidad)}). Te informamos el nuevo valor apenas se calcule. — UBIKAR Propiedades`));
   return tr;
 }
 
@@ -158,14 +185,27 @@ function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// El selector ofrece los meses (periodoDesde) en los que hubo actualizaciones, del más nuevo al más viejo.
+// "AAAA-MM" del mes que viene.
+function mesSiguiente() {
+  const h = new Date();
+  const s = new Date(h.getFullYear(), h.getMonth() + 1, 1);
+  return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// El selector ofrece los meses con actualizaciones (aplicadas o programadas) y siempre el mes que viene,
+// del más nuevo al más viejo.
 function llenarMeses() {
   const elegido = $("mes").value;
-  const meses = [...new Set(panel.aplicadas.map((a) => a.periodoDesde))].sort().reverse();
+  const proximo = mesSiguiente();
+  // Del futuro solo se ofrece el mes que viene (los más lejanos no interesan); sí se ofrece cualquier mes pasado,
+  // aunque tenga una actualización esperando el índice.
+  const otros = [...new Set([...panel.aplicadas.map((a) => a.periodoDesde), ...(panel.proximas || []).map((p) => p.periodoDesde)])]
+    .filter((m) => m < proximo).sort().reverse();
+  const meses = [proximo, ...otros]; // el mes que viene va primero
   const select = $("mes");
   select.innerHTML = "";
   select.append(new Option("Todos los meses", ""));
-  meses.forEach((m) => select.append(new Option(capitalizar(mesTexto(m)), m)));
+  meses.forEach((m) => select.append(new Option(`${capitalizar(mesTexto(m))}${m === proximo ? " · próximo mes" : ""}`, m)));
   select.value = meses.includes(elegido) ? elegido : "";
 }
 
@@ -173,13 +213,16 @@ function pintarTablas() {
   const consulta = $("buscador").value;
   const mes = $("mes").value;
   const aplicadas = panel.aplicadas.filter((f) => (!mes || f.periodoDesde === mes) && coincide(f, consulta));
+  // Las que todavía no se aplicaron se ven al elegir un mes o al buscar (con "Todos los meses" y sin búsqueda solo va el historial).
   const buscando = consulta.trim() !== "";
+  const proximas = mes || buscando ? (panel.proximas || []).filter((f) => (!mes || f.periodoDesde === mes) && coincide(f, consulta)) : [];
+  const filas = [...aplicadas.map((f) => ({ f, aplicada: true })), ...proximas.map((f) => ({ f, aplicada: false }))];
   let vacio = "Todavía no se aplicó ninguna actualización.";
   if (buscando) vacio = "Ninguna actualización coincide con la búsqueda.";
-  else if (mes) vacio = `No se aplicaron actualizaciones en ${mesTexto(mes)}.`;
-  pintarTabla($("tbAplic"), aplicadas, filaAplicada, $("vacioAplic"), vacio);
-  $("cantAplic").textContent = aplicadas.length;
-  $("conteo").textContent = buscando || mes ? `${aplicadas.length} de ${panel.aplicadas.length} actualizaciones` : "";
+  else if (mes) vacio = mes >= mesSiguiente() ? `No hay actualizaciones programadas para ${mesTexto(mes)}.` : `No se aplicaron actualizaciones en ${mesTexto(mes)}.`;
+  pintarTabla($("tbAplic"), filas, (x) => (x.aplicada ? filaAplicada(x.f) : filaProxima(x.f)), $("vacioAplic"), vacio);
+  $("cantAplic").textContent = filas.length;
+  $("conteo").textContent = buscando || mes ? `${filas.length} de ${panel.aplicadas.length + (panel.proximas || []).length} actualizaciones` : "";
 }
 
 async function cargarPanel() {

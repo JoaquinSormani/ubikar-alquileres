@@ -36,6 +36,9 @@ import org.sql2o.Connection;
 public class PagoServicio {
 
     private static final int DIA_VENCIMIENTO = ReglasDeCobro.DIA_VENCIMIENTO;
+    // Un cobro a la vez: dos pagos simultáneos (por ejemplo, un doble clic) no cobran dos veces el mismo
+    // período ni se pisan al numerar el recibo.
+    private static final Object CERROJO_PAGOS = new Object();
 
     private final ContratoDAO contratoDAO = new ContratoDAO();
     private final PropiedadDAO propiedadDAO = new PropiedadDAO();
@@ -119,6 +122,12 @@ public class PagoServicio {
 
     public Pago registrar(SolicitudPago s) {
         requerido(s != null && s.getIdPago() != null, "Falta elegir el cobro que se paga.");
+        synchronized (CERROJO_PAGOS) {
+            return registrarConCerrojo(s);
+        }
+    }
+
+    private Pago registrarConCerrojo(SolicitudPago s) {
         Pago p = pagoDAO.read(s.getIdPago());
         requerido(p != null, "El cobro indicado no existe.");
         YearMonth periodo = YearMonth.from(p.getPeriodo());

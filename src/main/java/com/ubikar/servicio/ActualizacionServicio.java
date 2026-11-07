@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,20 @@ public class ActualizacionServicio {
             BigDecimal porcentaje) {
     }
 
-    public record PanelActualizaciones(List<FilaActualizacion> aplicadas) {
+    /** La próxima actualización de un contrato: todavía no se aplicó (su valor nuevo se calcula ese día). */
+    public record FilaProxima(
+            Integer idContrato,
+            String direccion,
+            List<PersonaVista> inquilinos,
+            String indice,
+            Integer periodicidad,
+            LocalDate fechaAjuste,
+            String periodoDesde,
+            BigDecimal valorActual,
+            String estado) {
+    }
+
+    public record PanelActualizaciones(List<FilaActualizacion> aplicadas, List<FilaProxima> proximas) {
     }
 
     public ActualizacionServicio() {
@@ -164,6 +178,48 @@ public class ActualizacionServicio {
         }
     }
 
+    /** "PROGRAMADA" si la fecha de ajuste es futura; "ESPERANDO_INDICE" si ya llegó pero todavía no se pudo aplicar. */
+    static String estadoProxima(LocalDate fechaAjuste, LocalDate hoy) {
+        return fechaAjuste.isAfter(hoy) ? "PROGRAMADA" : "ESPERANDO_INDICE";
+    }
+
+    /** La próxima actualización de cada contrato vigente (una por contrato), de la más cercana a la más lejana. */
+    List<FilaProxima> proximas(LocalDate hoy) {
+        List<FilaProxima> filas = new ArrayList<>();
+        for (Contrato c : contratoDAO.readAll()) {
+            // Un contrato que todavía no empezó también tiene su primera actualización programada.
+            if (c.getFechaFin().isBefore(hoy)) {
+                continue;
+            }
+            if (c.getPeriodicidadActualizacion() == null || c.getPeriodicidadActualizacion() <= 0 || c.getIndiceActualizacion() == null) {
+                continue;
+            }
+            List<ActualizacionValor> aplicadas = actualizacionValorDAO.selectByContrato(c.getId());
+            LocalDate fechaAjuste = CalculoActualizacion.fechaAjuste(c.getFechaInicio(), c.getPeriodicidadActualizacion(), aplicadas.size() + 1);
+            if (fechaAjuste.isAfter(c.getFechaFin())) {
+                continue; // el contrato termina antes de su próxima actualización
+            }
+            BigDecimal valorActual = aplicadas.isEmpty() ? c.getValorInicial() : aplicadas.get(aplicadas.size() - 1).getValorNuevo();
+            Propiedad propiedad = propiedadDAO.read(c.getIdPropiedad());
+            List<PersonaVista> inquilinos = new ArrayList<>();
+            for (Inquilino inq : contratoDAO.selectInquilinos(c.getId())) {
+                inquilinos.add(new PersonaVista(inq.getNombre(), inq.getApellido(), inq.getDni(), inq.getTelefono()));
+            }
+            filas.add(new FilaProxima(
+                    c.getId(),
+                    propiedad == null ? "" : propiedad.getDireccion(),
+                    inquilinos,
+                    c.getIndiceActualizacion().name(),
+                    c.getPeriodicidadActualizacion(),
+                    fechaAjuste,
+                    YearMonth.from(fechaAjuste).toString(),
+                    valorActual,
+                    estadoProxima(fechaAjuste, hoy)));
+        }
+        filas.sort(Comparator.comparing(FilaProxima::fechaAjuste).thenComparing(FilaProxima::direccion, String.CASE_INSENSITIVE_ORDER));
+        return filas;
+    }
+
     /**
      * Consulta para la pantalla de actualizaciones.
      */
@@ -199,6 +255,6 @@ public class ActualizacionServicio {
                     a.getValorNuevo(),
                     porcentaje));
         }
-        return new PanelActualizaciones(filas);
+        return new PanelActualizaciones(filas, proximas(LocalDate.now()));
     }
 }
