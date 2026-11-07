@@ -172,6 +172,12 @@ body::before {
   transition: left 340ms var(--ease-out), right 340ms var(--ease-out), box-shadow 340ms var(--ease-out);
 }
 
+/* El marco que se expande tapa a la tarjeta vecina: no recibe el mouse, así el "hover" depende solo del área
+   original de cada tarjeta y al pasar a la de al lado esta se cierra y la otra se abre. */
+.ubk-inicio__accesos .ubk-acceso__marco {
+  pointer-events: none;
+}
+
 .ubk-acceso__cara {
   flex: 0 0 100cqw;
   display: flex;

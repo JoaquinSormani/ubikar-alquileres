@@ -30,11 +30,11 @@ const DIEGO = { nombre: "Diego", apellido: "Pereyra", dni: "28333444", telefono:
 const DEMO = {
   aplicadas: [
     { id: 3, fecha: "2026-10-15", idContrato: 101, direccion: "Belgrano 1250, 2.º B", inquilinos: [CAMILA], indice: "ICL",
-      periodoDesde: "2026-10", valorAnterior: 275818.25, valorNuevo: 292818.58, porcentaje: 6.16 },
+      periodoDesde: "2026-10", periodicidad: 3, valorAnterior: 275818.25, valorNuevo: 292818.58, porcentaje: 6.16 },
     { id: 2, fecha: "2026-10-01", idContrato: 102, direccion: "Colón 480, depto 1", inquilinos: [DIEGO], indice: "IPC",
-      periodoDesde: "2026-10", valorAnterior: 180000, valorNuevo: 190455.48, porcentaje: 5.81 },
+      periodoDesde: "2026-10", periodicidad: 3, valorAnterior: 180000, valorNuevo: 190455.48, porcentaje: 5.81 },
     { id: 1, fecha: "2026-07-15", idContrato: 101, direccion: "Belgrano 1250, 2.º B", inquilinos: [CAMILA], indice: "ICL",
-      periodoDesde: "2026-07", valorAnterior: 250000, valorNuevo: 275818.25, porcentaje: 10.33 },
+      periodoDesde: "2026-07", periodicidad: 3, valorAnterior: 250000, valorNuevo: 275818.25, porcentaje: 10.33 },
   ],
 };
 
@@ -69,6 +69,12 @@ function mesTexto(periodo) {
 
 function nombres(inquilinos) {
   return inquilinos.map((i) => `${i.nombre} ${i.apellido}`).join(" y ");
+}
+
+// Cada cuántos meses se actualiza el contrato: aclara de qué período es el porcentaje (1 mes no es lo mismo que 6).
+function nombrePeriodo(meses) {
+  const nombres = { 1: "mensual", 2: "bimestral", 3: "trimestral", 4: "cuatrimestral", 6: "semestral", 12: "anual" };
+  return nombres[meses] || `cada ${meses} meses`;
 }
 
 function plural(n, uno, varios) {
@@ -123,7 +129,7 @@ function filaAplicada(a) {
   tr.append(celda(fechaTexto(a.fecha)), celda(quien(a)), celda(a.direccion), celda(a.indice === "ICL" || a.indice === "IPC" ? [el("span", `act__indice act__indice--${a.indice.toLowerCase()}`, a.indice)] : a.indice));
   tr.append(celda(mesTexto(a.periodoDesde)));
   tr.append(celda(dinero.format(a.valorAnterior), "pago__num"));
-  tr.append(celda([el("span", "", dinero.format(a.valorNuevo)), el("span", "pago__sub act__aumento", `+ ${porcentaje(a.porcentaje)}`)], "pago__num"));
+  tr.append(celda([el("span", "", dinero.format(a.valorNuevo)), el("span", "pago__sub act__aumento", `+ ${porcentaje(a.porcentaje)}${a.periodicidad ? ` · ${nombrePeriodo(a.periodicidad)}` : ""}`)], "pago__num"));
   const avisar = el("a", "btn btn--ghost", "Avisar");
   const conTelefono = a.inquilinos.find((i) => telefonoWhatsApp(i.telefono));
   if (conTelefono) {

@@ -303,12 +303,12 @@ Los cobros **PAGADOS no se tocan nunca**. Para el cambio de monto alcanza con `P
   "aplicadas": [
     {"id":3,"fecha":"2026-10-15","idContrato":101,"direccion":"Belgrano 1250, 2.º B",
      "inquilinos":[{"nombre":"Camila","apellido":"Rojas","dni":"30111222","telefono":"2664111222"}],
-     "indice":"ICL","periodoDesde":"2026-10","valorAnterior":275818.25,"valorNuevo":292818.58,"porcentaje":6.16}
+     "indice":"ICL","periodicidad":3,"periodoDesde":"2026-10","valorAnterior":275818.25,"valorNuevo":292818.58,"porcentaje":6.16}
   ]
 }
 ```
 
-- `aplicadas`: todas las filas de `actualizacion_valor`, la más reciente primero. El **filtro por mes lo hace la pantalla** con `periodoDesde` (no hace falta ningún parámetro en el endpoint). Los datos de `inquilinos` salen del contrato (como en `PagoServicio.panel`). `porcentaje = (factor − 1) × 100`.
+- `aplicadas`: todas las filas de `actualizacion_valor`, la más reciente primero. `periodicidad` es cada cuántos meses se actualiza el contrato (`Contrato.periodicidadActualizacion`): la pantalla la muestra junto al porcentaje ("+ 6,28 % · trimestral") para que se entienda de qué período es el aumento. Agregá el campo al `record FilaActualizacion` y pasá `c != null ? c.getPeriodicidadActualizacion() : null`. El **filtro por mes lo hace la pantalla** con `periodoDesde` (no hace falta ningún parámetro en el endpoint). Los datos de `inquilinos` salen del contrato (como en `PagoServicio.panel`). `porcentaje = (factor − 1) × 100`.
 - Siempre **200**. No hay endpoints de escritura: lo único que escribe es la tarea programada.
 
 Para probar la parte automática sin esperar a la madrugada, alcanza con **reiniciar el backend** (corre al arrancar) o llamar al método desde un test. Para la demo conviene tener un contrato de hace unos meses con periodicidad corta, para que al arrancar se vea una actualización aplicada.
