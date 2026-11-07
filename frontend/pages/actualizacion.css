@@ -1,0 +1,51 @@
+/* Actualizar valor de alquiler: reutiliza portal.css, contrato.css y pago.css; acá solo lo propio de esta pantalla */
+
+/* ---------- aviso del modo demostración ---------- */
+
+.act__demo {
+  margin: 0 0 14px;
+  padding: 10px 16px;
+  border: 1px solid rgba(46, 65, 87, 0.25);
+  border-radius: 12px;
+  background: rgba(228, 234, 241, 0.85);
+  color: var(--navy, #2e4157);
+  font-size: 0.9rem;
+}
+
+/* ---------- índice y estados en las tablas ---------- */
+
+.act__indice {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--wine);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* cada índice tiene su color para distinguirlos de un vistazo: ICL azul, IPC ocre */
+.act__indice--icl {
+  background: rgba(46, 65, 87, 0.13);
+  color: #2e4157;
+}
+
+.act__indice--ipc {
+  background: rgba(176, 125, 40, 0.18);
+  color: #7a5316;
+}
+
+.act__aumento {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+/* ---------- escritorio: las dos tablas comparten la altura sin desplazar la página ---------- */
+
+@media (max-height: 560px) {
+  .act__demo {
+    margin-bottom: 8px;
+    padding: 6px 14px;
+  }
+}

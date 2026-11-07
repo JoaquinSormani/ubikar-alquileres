@@ -2,21 +2,25 @@
 
 Este es el tercer caso de uso de la entrega final. Esta guía dice **qué hace**, **qué ya existe en el código** y **qué hay que escribir**, con el código de la consulta al BCRA ya probado contra la API real.
 
-Como modelo para copiar la estructura, mirá **Registrar Pago**: `PagoControlador`, `PagoServicio`, `PagoDAO`, `frontend/pages/pago.html|js|css`. La organización de carpetas y las reglas de capas están en `ARQUITECTURA.md`.
+**La actualización es automática.** El Responsable de UBIKAR no carga ni confirma nada: el sistema aplica el aumento solo cuando llega la fecha de ajuste de cada contrato. El **frontend ya está hecho** (`frontend/pages/actualizacion.html|js|css`) y es una pantalla de **consulta**; falta todo el backend.
+
+Como modelo para copiar la estructura, mirá **Registrar Pago** y **Consultar Tablero**: `PagoControlador`, `PagoServicio`, `PagoDAO` y `pago.js`. La organización de carpetas y las reglas de capas están en `ARQUITECTURA.md`.
 
 ## 1. Qué hace el caso de uso
 
 El contrato dice (cláusula CUARTA) que el valor del alquiler *"se ajustará automáticamente cada X meses conforme al índice"* y que la corredora *"comunicará al locatario el nuevo valor"*. Entonces:
 
-1. **El sistema calcula solo** el aumento, consultando el índice (ICL o IPC) al BCRA. Nadie tipea el índice.
-2. **El Responsable de UBIKAR confirma** el aumento y se lo comunica al inquilino.
+1. **El sistema aplica solo el aumento** el día de la fecha de ajuste, consultando el índice (ICL o IPC) al BCRA. Nadie tipea ni confirma nada.
+2. El Responsable **consulta** en una pantalla qué se actualizó (con un filtro por mes) y **avisa al inquilino** por WhatsApp (el botón arma el mensaje; no se envía solo).
 
-Flujo:
+Flujo automático (lo dispara una **tarea programada** todos los días a la madrugada, y también una vez al arrancar el backend para ponerse al día):
 
-1. El Responsable abre la pantalla. Ve los contratos que **tienen una actualización pendiente** (ya llegó la fecha de ajuste y todavía no se aplicó).
-2. Elige uno. El sistema muestra una **vista previa**: valor actual → valor nuevo, porcentaje de aumento, índice usado y fechas. Todavía no se guarda nada.
-3. El Responsable confirma. El sistema guarda la actualización y cambia el monto de los cobros.
-4. Alternativa: si la API del BCRA no responde, o el IPC del mes todavía no se publicó, el Responsable **carga el porcentaje a mano**. Esto es importante para que la demo no dependa de internet.
+1. Para cada contrato vigente, buscar las actualizaciones **pendientes** (fecha de ajuste `<= hoy` y todavía no aplicada).
+2. Para cada una, en orden: consultar el índice al BCRA y calcular el valor nuevo.
+3. Guardar la actualización y cambiar el monto de los cobros (todo en una transacción por contrato).
+4. Si el BCRA no responde o el IPC de ese mes todavía no se publicó, **no se hace nada** con ese contrato: queda **"esperando el índice"** y se reintenta al día siguiente. No hay carga manual.
+
+Como el caso lo inicia el sistema y no una persona, en el diagrama de casos de uso el actor principal es el **Sistema (temporizador)** y el **Responsable de UBIKAR** es actor secundario (consulta y avisa). Conviene confirmar con la cátedra que está bien modelarlo así.
 
 ## 2. Lo que ya existe
 
@@ -39,8 +43,8 @@ Sea `N = periodicidadActualizacion` y `k = 1, 2, 3…` el número de actualizaci
 
 - Fecha de la actualización `k`: `fechaInicio + k × N meses` (ejemplo: inicio 15/04/2026 y N = 3, entonces k = 1 es el 15/07/2026).
 - El nuevo valor rige desde el cobro del **mes de esa fecha** (`periodoDesde` = día 1 de ese mes).
-- Una actualización está **pendiente** si su fecha ya llegó (`<= hoy`) y no existe todavía en la tabla de actualizaciones. **No se permite adelantar una actualización.**
-- Si hay varias pendientes de un mismo contrato, se aplican **de a una, en orden**.
+- Una actualización está **pendiente** si su fecha ya llegó (`<= hoy`) y no existe todavía en la tabla de actualizaciones. **Nunca se adelanta una actualización.**
+- Si hay varias pendientes de un mismo contrato (por ejemplo, el sistema estuvo apagado), se aplican **de a una, en orden**, hasta ponerse al día.
 
 ## 4. Cómo se calcula
 
@@ -75,7 +79,7 @@ Respuesta (el dato **más reciente viene primero**):
 
 Cosas que descubrimos al probarla:
 - Si `desde` es una fecha **futura**, responde `400` ("la fecha desde no puede ser mayor a la actual").
-- Si pedís meses de IPC que todavía no se publicaron, responde `200` con `detalle` **vacío**. El código de abajo lo convierte en un error con mensaje claro para que se cargue a mano.
+- Si pedís meses de IPC que todavía no se publicaron, responde `200` con `detalle` **vacío**. El código de abajo lo convierte en una excepción: esa actualización **queda en espera y se reintenta al día siguiente** (la tarea programada corre todos los días).
 - El ICL no tiene dato los días sin publicación: por eso se toma el último valor anterior a la fecha.
 - No hace falta agregar ninguna dependencia: se usa `java.net.http.HttpClient` (Java 17) y Jackson, que ya viene con Spring Boot.
 
@@ -132,7 +136,7 @@ public class IndicesBcra {
         long esperados = desde.until(hasta, java.time.temporal.ChronoUnit.MONTHS) + 1;
         if (valores.size() != esperados) {
             throw new IllegalStateException("Falta la inflación de algún mes entre " + desde + " y " + hasta
-                    + " (el INDEC la publica con atraso). Cargue el índice a mano.");
+                    + " (el INDEC la publica con atraso). Se reintenta mañana.");
         }
         return valores;
     }
@@ -151,7 +155,7 @@ public class IndicesBcra {
             }
             return json.readTree(r.body()).get("results").get(0).get("detalle");
         } catch (IOException e) {
-            throw new IllegalStateException("No se pudo consultar el BCRA. Cargue el índice a mano.", e);
+            throw new IllegalStateException("No se pudo consultar el BCRA. Se reintenta mañana.", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Consulta al BCRA interrumpida.", e);
@@ -211,79 +215,115 @@ Prueba real (hecha el 7/11/2026): ICL del 1/4/2026 = 31,22 y del 1/10/2026 = 36,
 
 ### 6.1 Base de datos
 
-Una tabla nueva que deja el **historial** de cada actualización (sirve para no aplicar dos veces la misma y para explicar el cálculo). Agregala a `bd_ubikar.sql` **y** creá `bd_migracion_actualizacion_valor.sql` para quienes ya tienen la base creada, como hicimos con `bd_migracion_numero_recibo.sql`.
+Una tabla nueva que deja el **historial** de cada actualización (sirve para no aplicar dos veces la misma y para mostrarla en la pantalla). Agregala a `bd_ubikar.sql` **y** creá `bd_migracion_actualizacion_valor.sql` para quienes ya tienen la base creada, como hicimos con `bd_migracion_numero_recibo.sql`.
 
 ```sql
 CREATE TABLE `ubikar`.`actualizacion_valor` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `idContrato` INT NOT NULL,
   `periodoDesde` DATE NOT NULL,            -- primer mes con el valor nuevo (día 1)
-  `fecha` DATE NOT NULL,                   -- día en que se confirmó
+  `fecha` DATE NOT NULL,                   -- día en que el sistema la aplicó
   `indice` VARCHAR(10) NOT NULL,           -- ICL o IPC
   `valorAnterior` DECIMAL(12,2) NOT NULL,
   `valorNuevo` DECIMAL(12,2) NOT NULL,
   `factor` DECIMAL(10,6) NOT NULL,
-  `origen` VARCHAR(10) NOT NULL,           -- BCRA o MANUAL
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_actualizacion` (`idContrato`, `periodoDesde`),
   FOREIGN KEY (`idContrato`) REFERENCES `ubikar`.`contrato` (`id`));
 ```
 
+La clave `UNIQUE (idContrato, periodoDesde)` hace que la tarea sea **idempotente**: si corre dos veces, la segunda no duplica nada.
+
 ### 6.2 Clases (una por capa, mismos nombres para los diagramas)
 
 | Capa | Clase | Qué hace |
 |---|---|---|
-| Frontend | `pages/actualizacion.html`, `.js`, `.css` | Pantalla (ver 6.4) |
-| Controlador | `ActualizacionControlador` | Los 3 endpoints de abajo, con `@CrossOrigin(origins = "*")` |
-| Servicio | `ActualizacionServicio` | Reglas: pendientes, vista previa, confirmar (transacción) |
+| Frontend | `pages/actualizacion.html`, `.js`, `.css` | **Ya hecho.** Pantalla de consulta |
+| Controlador | `ActualizacionControlador` | `GET /api/actualizaciones/panel`, con `@CrossOrigin(origins = "*")` |
+| Tarea programada | `ActualizacionProgramada` | Dispara el servicio todos los días y al arrancar |
+| Servicio | `ActualizacionServicio` | Reglas: buscar pendientes, calcular, aplicar (transacción) y armar el panel |
 | Servicio | `IndicesBcra`, `CalculoActualizacion` | El código de la sección 5 |
 | DAO | `ActualizacionValorDAO` | CRUD (`create`, `readAll`, `read`, `update`, `delete`) + `selectByContrato(idContrato)` |
 | Modelo | `ActualizacionValor` | Los campos de la tabla |
 
 Reglas de la cátedra que ya aplicamos en todo el proyecto: el DAO tiene **sí o sí el CRUD**, la conexión sale del **Singleton `Sql2oDAO`** (`Sql2oDAO.getSql2o()`), y el diagrama de secuencia muestra **todas** las clases del diagrama de clases que participan.
 
-### 6.3 Endpoints
+### 6.3 La tarea programada
 
-**1) `GET /api/actualizaciones/pendientes`** → lista de contratos con una actualización pendiente:
+Spring ya trae lo necesario, no hay que agregar dependencias:
 
-```json
-[{"idContrato":3,"direccion":"Junin 700, depto 3","inquilinos":[{"nombre":"Lucas","apellido":"Herrera"}],
-  "valorActual":250000.00,"indice":"ICL","periodicidad":3,"fechaAjuste":"2026-07-15","periodoDesde":"2026-07"}]
+```java
+// en UbikarApplication: agregar @EnableScheduling a la clase
+
+package com.ubikar.servicio;
+
+import java.time.LocalDate;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ActualizacionProgramada {
+
+    private final ActualizacionServicio servicio = new ActualizacionServicio();
+
+    @Scheduled(cron = "0 5 6 * * *")              // todos los días a las 06:05
+    public void aplicarPendientes() {
+        servicio.aplicarPendientes(LocalDate.now());
+    }
+
+    @EventListener(ApplicationReadyEvent.class)   // y al arrancar, por si el sistema estuvo apagado
+    public void alArrancar() {
+        servicio.aplicarPendientes(LocalDate.now());
+    }
+}
 ```
 
-**2) `GET /api/contratos/{id}/actualizacion`** (opcional `?porcentajeManual=17.5`) → vista previa, **no guarda nada**:
+Los controladores del proyecto crean sus servicios con `new`, no con inyección: seguí ese mismo estilo.
 
-```json
-{"idContrato":3,"indice":"ICL","origen":"BCRA","fechaBase":"2026-04-15","fechaAjuste":"2026-07-15",
- "valorIndiceBase":31.22,"valorIndiceFinal":36.54,"factor":1.170404,"porcentaje":17.04,
- "valorActual":250000.00,"valorNuevo":292601.00,"periodoDesde":"2026-07"}
-```
+**Qué hace `ActualizacionServicio.aplicarPendientes(hoy)`**, para cada contrato con `fechaFin >= hoy` y **de a una actualización por vez, en orden**:
 
-**3) `POST /api/contratos/{id}/actualizacion`** con `{"porcentajeManual": 17.5}` (el campo es opcional; si no viene, se usa el BCRA) → confirma.
-- **201** con el mismo cuerpo de la vista previa más `"id"` (el de la actualización).
-- **400** `{"error": "mensaje en español"}` en estos casos: el contrato no existe, no hay actualización pendiente, el BCRA no responde o falta el dato (el mensaje tiene que decir "Cargue el índice a mano"), o el porcentaje manual es inválido.
-- Códigos y forma de los errores iguales a los de `PagoControlador` (un `@ExceptionHandler(IllegalArgumentException.class)` que devuelve el 400).
-
-**Qué hace el servicio al confirmar** (todo en **una transacción**, igual que `PagoServicio.registrar`: `Sql2oDAO.getSql2o().beginTransaction()` … `con.commit(false)`):
-
-1. Validar que el contrato exista y que haya una actualización pendiente.
+1. Calcular `k` (la próxima actualización sin aplicar) y su fecha con `CalculoActualizacion.fechaAjuste`. Si es posterior a `hoy`, **pasar al siguiente contrato**.
 2. Llamar a `PagoServicio.asegurarCobros(contrato, hoy)` para que existan los cobros hasta el mes actual.
-3. Calcular (ICL o IPC, o el porcentaje manual si vino).
-4. Para cada cobro **PENDIENTE** del contrato con `periodo >= periodoDesde`: `monto = valorNuevo` y `indiceActualizacion = factor`.
-5. Insertar la fila en `actualizacion_valor`.
-6. `commit`. Si algo falla, se revierte todo.
+3. Consultar el índice (`IndicesBcra`) y calcular el factor. **Si lanza `IllegalStateException`, no se aplica y se sigue con el siguiente contrato** (se reintenta mañana). Guardá el motivo en un log.
+4. En **una transacción** (igual que `PagoServicio.registrar`: `Sql2oDAO.getSql2o().beginTransaction()` … `con.commit(false)`):
+   - para cada cobro **PENDIENTE** del contrato con `periodo >= periodoDesde`: `monto = valorNuevo` y `indiceActualizacion = factor`;
+   - insertar la fila en `actualizacion_valor`.
+5. Repetir desde el paso 1 con la actualización siguiente, por si había varias atrasadas.
 
-Para el punto 4 conviene un método nuevo en `PagoDAO` (`update(Connection, Pago)` ya existe y alcanza).
+Los cobros **PAGADOS no se tocan nunca**. Para el cambio de monto alcanza con `PagoDAO.update(Connection, Pago)`, que ya existe.
 
-### 6.4 Pantalla (frontend)
+### 6.4 El endpoint que usa la pantalla
 
-- Archivos en `frontend/pages/` y estilos propios; reutilizá `styles/ubk.css`, `components/ux.js` (avisos) y `services/api.js` (`API_BASE`). Copiá la estructura de `pago.html` / `pago.js`.
-- Tabla con los contratos pendientes y un botón **Actualizar** por fila. El botón abre un cuadro con la vista previa (valor actual → valor nuevo, porcentaje, índice y fechas) y los botones **Confirmar** y **Cancelar**.
-- Si el BCRA falla, el cuadro muestra el mensaje y habilita un campo **"Porcentaje de aumento"** para cargarlo a mano.
-- Reglas que pidió la profesora y el cliente: **sin scroll** dentro de los cuadros, estilo **sobrio y empresarial** (sin efectos llamativos) y mensajes claros en español.
-- Agregá el acceso a la pantalla desde `index.html`, como las demás.
+**`GET /api/actualizaciones/panel`** (solo lectura):
 
-### 6.5 Pruebas (sin red ni base, así `mvn package` no depende de nada)
+```json
+{
+  "aplicadas": [
+    {"id":3,"fecha":"2026-10-15","idContrato":101,"direccion":"Belgrano 1250, 2.º B",
+     "inquilinos":[{"nombre":"Camila","apellido":"Rojas","dni":"30111222","telefono":"2664111222"}],
+     "indice":"ICL","periodoDesde":"2026-10","valorAnterior":275818.25,"valorNuevo":292818.58,"porcentaje":6.16}
+  ]
+}
+```
+
+- `aplicadas`: todas las filas de `actualizacion_valor`, la más reciente primero. El **filtro por mes lo hace la pantalla** con `periodoDesde` (no hace falta ningún parámetro en el endpoint). Los datos de `inquilinos` salen del contrato (como en `PagoServicio.panel`). `porcentaje = (factor − 1) × 100`.
+- Siempre **200**. No hay endpoints de escritura: lo único que escribe es la tarea programada.
+
+Para probar la parte automática sin esperar a la madrugada, alcanza con **reiniciar el backend** (corre al arrancar) o llamar al método desde un test. Para la demo conviene tener un contrato de hace unos meses con periodicidad corta, para que al arrancar se vea una actualización aplicada.
+
+### 6.5 La pantalla (ya hecha)
+
+`frontend/pages/actualizacion.html|js|css`, enlazada desde `index.html`:
+
+- Tabla **"Actualizaciones"** (fecha, inquilino, propiedad, índice, desde cuándo rige, valor anterior y nuevo, con el porcentaje) y un botón **Avisar** que abre WhatsApp con el mensaje armado.
+- **Selector de mes** (igual que en Registrar Pago) con los meses en que hubo actualizaciones, y buscador por DNI, nombre o propiedad.
+- **Modo demostración:** mientras el servidor responda 404 en `/api/actualizaciones/panel`, la pantalla muestra datos de ejemplo con un aviso. Apenas exista el endpoint, pasa sola a los datos reales. Con `?demo` al final de la dirección se fuerza el modo demostración.
+
+Si cambiás nombres de campos en el JSON, avisá para ajustar `actualizacion.js` (los datos de ejemplo están al principio del archivo y muestran la forma exacta).
+
+### 6.6 Pruebas (sin red ni base, así `mvn package` no depende de nada)
 
 ```java
 package com.ubikar.servicio;
@@ -318,23 +358,24 @@ class CalculoActualizacionTest {
 }
 ```
 
-Probá también a mano: con el backend en `localhost:8081`, `curl http://localhost:8081/api/actualizaciones/pendientes`.
-
 ## 7. Para la entrega (informe y presentación)
 
-Este caso de uso va al informe como **sección 8.6**, igual que los otros: **especificación en una sola hoja**, **un diagrama de secuencia** y **un diagrama de clases** (con la pantalla, el controlador, el servicio, `IndicesBcra`, el DAO y el Singleton `Sql2oDAO`).
+Este caso de uso va al informe como **sección 8.6**, igual que los otros: **especificación en una sola hoja**, **un diagrama de secuencia** y **un diagrama de clases**.
 
+- **Actor principal: Sistema (temporizador).** Actor secundario: Responsable de UBIKAR (consulta el historial y avisa al inquilino). El BCRA es un sistema externo al que consulta `IndicesBcra`.
+- **Secuencia:** `ActualizacionProgramada` → `ActualizacionServicio` → `ContratoDAO` / `PagoServicio` / `IndicesBcra` (BCRA) / `PagoDAO` / `ActualizacionValorDAO` → `Sql2oDAO` (Singleton). Mostrá el fragmento `alt` cuando el índice no está disponible (se reintenta mañana) y el `loop` sobre los contratos.
+- **Clases:** la pantalla (`FormularioActualizacion`), `ActualizacionControlador`, `ActualizacionProgramada`, `ActualizacionServicio`, `IndicesBcra`, `CalculoActualizacion`, `ActualizacionValorDAO`, `Sql2oDAO` y el modelo `ActualizacionValor`.
 - Los diagramas tienen que mostrar lo que el código hace de verdad. Cualquier cambio de nombres, avisá y se actualizan juntos.
-- Actor: **Responsable de UBIKAR**. El BCRA es un sistema externo que consulta el servicio (actor secundario o nota en el diagrama).
-- Para la demo en vivo: tené un contrato con una actualización pendiente (por ejemplo, un contrato de hace 3 meses con periodicidad 3) y practicá también el camino del **porcentaje manual**.
+- Para la demo en vivo: dejá un contrato con una actualización por aplicar, reiniciá el backend y mostrá en la pantalla que apareció en **"Actualizaciones aplicadas"** y que el monto nuevo se ve en **Registrar Pago**.
 
 ## 8. Checklist
 
 - [ ] Tabla `actualizacion_valor` en `bd_ubikar.sql` y migración `bd_migracion_actualizacion_valor.sql`.
 - [ ] `ActualizacionValor` y `ActualizacionValorDAO` (CRUD + `selectByContrato`).
 - [ ] `IndicesBcra` y `CalculoActualizacion` (sección 5) y su prueba.
-- [ ] `ActualizacionServicio` y `ActualizacionControlador` con los 3 endpoints.
-- [ ] Pantalla `pages/actualizacion.*`, con porcentaje manual de respaldo.
-- [ ] Probar el camino completo: pendientes → vista previa → confirmar → ver el monto nuevo en **Registrar Pago**.
+- [ ] `ActualizacionServicio` (`aplicarPendientes` y el armado del panel).
+- [ ] `ActualizacionProgramada` y `@EnableScheduling` en `UbikarApplication`.
+- [ ] `ActualizacionControlador` con `GET /api/actualizaciones/panel`.
+- [ ] Probar el camino completo: reiniciar el backend → la pantalla muestra la actualización → el monto nuevo aparece en **Registrar Pago**.
 - [ ] Especificación, secuencia y clases (sección 8.6 del informe) y diapositivas.
 - [ ] `mvn test` y `mvn package` en verde antes de hacer `git push`.

@@ -5,7 +5,7 @@ const ETIQUETA_MEDIO = Object.fromEntries(MEDIOS);
 const $ = (id) => document.getElementById(id);
 const dinero = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 
-let panel = { pendientes: [], realizadosDelMes: [] };
+let panel = { pendientes: [], realizados: [], meses: [] };
 let filaEnCobro = null;
 let temporizadorFecha = null;
 
@@ -41,6 +41,12 @@ function fechaTexto(iso) {
 
 function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// "2026-07" -> "julio de 2026"
+function mesTexto(periodo) {
+  const [a, m] = periodo.split("-").map(Number);
+  return new Date(a, m - 1, 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 }
 
 function nombres(inquilinos) {
@@ -127,25 +133,40 @@ function pintarTabla(cuerpo, filas, crear, vacio, textoVacio) {
 function pintarTablas() {
   const consulta = $("buscador").value;
   const pendientes = panel.pendientes.filter((f) => coincide(f, consulta));
-  const realizados = panel.realizadosDelMes.filter((f) => coincide(f, consulta));
+  const realizados = panel.realizados.filter((f) => coincide(f, consulta));
+  const mes = $("mes").value;
   const buscando = consulta.trim() !== "";
   pintarTabla($("tbPend"), pendientes, filaPendiente, $("vacioPend"),
-    buscando ? "Ningún cobro pendiente coincide con la búsqueda." : "No hay pagos pendientes: todos los contratos están al día.");
+    buscando ? "Ningún cobro pendiente coincide con la búsqueda."
+      : mes ? `No hay pagos pendientes de ${mesTexto(mes)}.` : "No hay pagos pendientes: todos los contratos están al día.");
   pintarTabla($("tbReal"), realizados, filaRealizada, $("vacioReal"),
-    buscando ? "Ningún pago de este mes coincide con la búsqueda." : "Todavía no se registraron pagos este mes.");
+    buscando ? "Ningún pago coincide con la búsqueda."
+      : mes ? `Todavía no se registraron pagos de ${mesTexto(mes)}.` : "Todavía no se registraron pagos.");
   $("cantPend").textContent = pendientes.length;
   $("cantReal").textContent = realizados.length;
   $("conteo").textContent = buscando
-    ? `${pendientes.length} de ${panel.pendientes.length} pendientes · ${realizados.length} de ${panel.realizadosDelMes.length} realizados`
+    ? `${pendientes.length} de ${panel.pendientes.length} pendientes · ${realizados.length} de ${panel.realizados.length} realizados`
     : "";
+}
+
+// El selector ofrece los meses que tienen cobros (los manda el servidor), del más nuevo al más viejo.
+function llenarMeses() {
+  const select = $("mes");
+  const elegido = select.value;
+  select.innerHTML = "";
+  select.append(new Option("Todos los meses", ""));
+  (panel.meses || []).forEach((m) => select.append(new Option(capitalizar(mesTexto(m)), m)));
+  select.value = (panel.meses || []).includes(elegido) ? elegido : "";
 }
 
 async function cargarPanel() {
   try {
-    const r = await pedir("/pagos/panel");
+    const mes = $("mes").value;
+    const r = await pedir(`/pagos/panel${mes ? `?mes=${mes}` : ""}`);
     if (!r.ok) throw new Error("panel");
     $("offline").hidden = true;
     panel = r.cuerpo;
+    llenarMeses();
     pintarTablas();
   } catch (err) {
     $("offline").hidden = false;
@@ -321,6 +342,7 @@ function mostrarExito(respuesta) {
 // ---------- eventos ----------
 
 $("buscador").addEventListener("input", pintarTablas);
+$("mes").addEventListener("change", cargarPanel);
 $("cobroForm").addEventListener("submit", registrar);
 $("fechaPago").addEventListener("input", alCambiarFecha);
 $("fechaPago").addEventListener("change", alCambiarFecha);

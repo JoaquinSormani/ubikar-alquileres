@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import org.sql2o.Connection;
 
 /**
@@ -53,8 +54,11 @@ public class PagoServicio {
             int diasAtraso, BigDecimal punitorio, BigDecimal total, LocalDate fechaPago, MedioPago medioPago, Integer numeroRecibo) {
     }
 
-    /** Pendientes de cobro (con el punitorio a la fecha) y pagos realizados en el mes en curso. */
-    public record PanelPagos(LocalDate fecha, List<FilaPago> pendientes, List<FilaPago> realizadosDelMes) {
+    /**
+     * Pendientes de cobro (con el punitorio a la fecha) y pagos realizados, de todos los meses o de uno solo.
+     * "meses" lista (del más nuevo al más viejo, formato AAAA-MM) los meses que tienen cobros, para el selector.
+     */
+    public record PanelPagos(LocalDate fecha, List<FilaPago> pendientes, List<FilaPago> realizados, List<String> meses) {
     }
 
     public record Calculo(int diasAtraso, BigDecimal punitorio, BigDecimal total) {
@@ -62,12 +66,17 @@ public class PagoServicio {
 
     // ---------- consultas ----------
 
-    /** Cobros pendientes de los contratos vigentes y pagos del mes, para la pantalla de Registrar Pago. */
+    /** Todos los cobros pendientes y los pagos realizados de los contratos vigentes, para la pantalla de Registrar Pago. */
     public PanelPagos panel() {
+        return panel(null);
+    }
+
+    /** Igual que panel(), pero con un mes solo se devuelven los cobros de ese mes (null = todos los meses). */
+    public PanelPagos panel(YearMonth mes) {
         LocalDate hoy = LocalDate.now();
-        YearMonth mes = YearMonth.from(hoy);
         List<FilaPago> pendientes = new ArrayList<>();
         List<FilaPago> realizados = new ArrayList<>();
+        Set<String> meses = new TreeSet<>(Comparator.reverseOrder());
         for (Contrato c : contratoDAO.readAll()) {
             if (c.getFechaInicio().isAfter(hoy) || c.getFechaFin().isBefore(hoy)) {
                 continue;
@@ -80,17 +89,22 @@ public class PagoServicio {
                 inquilinos.add(new PersonaVista(i.getNombre(), i.getApellido(), i.getDni(), i.getTelefono()));
             }
             for (Pago p : pagoDAO.selectByContrato(c.getId())) {
+                YearMonth periodo = YearMonth.from(p.getPeriodo());
+                meses.add(periodo.toString());
+                if (mes != null && !periodo.equals(mes)) {
+                    continue;
+                }
                 if (p.getEstado() == EstadoPago.PENDIENTE) {
                     Calculo calculo = calcular(p, hoy);
                     pendientes.add(fila(p, c, direccion, inquilinos, calculo.diasAtraso(), calculo.punitorio()));
-                } else if (p.getFecha() != null && YearMonth.from(p.getFecha()).equals(mes)) {
+                } else if (p.getFecha() != null) {
                     realizados.add(fila(p, c, direccion, inquilinos, p.getDiasAtraso(), p.getPunitorio()));
                 }
             }
         }
         pendientes.sort(Comparator.comparing(FilaPago::fechaVencimiento).thenComparing(FilaPago::direccion, String.CASE_INSENSITIVE_ORDER));
         realizados.sort(Comparator.comparing(FilaPago::numeroRecibo, Comparator.nullsLast(Comparator.<Integer>reverseOrder())).thenComparing(FilaPago::idPago, Comparator.reverseOrder()));
-        return new PanelPagos(hoy, pendientes, realizados);
+        return new PanelPagos(hoy, pendientes, realizados, new ArrayList<>(meses));
     }
 
     /** Mora y total de un cobro pendiente si se pagara en la fecha indicada (hoy si no viene). */

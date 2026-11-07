@@ -38,6 +38,16 @@
   width: 100%;
 }
 
+/* selector de mes (compartido con Actualizar valor de alquiler) */
+.pago__mes {
+  flex: 0 0 auto;
+  min-width: 210px;
+}
+
+.pago__mes .field__input {
+  width: 100%;
+}
+
 .pago__conteo {
   margin: 0;
   font-size: 0.85rem;
@@ -475,6 +485,10 @@
 
   .pago__buscador {
     max-width: none;
+  }
+
+  .pago__mes {
+    min-width: 0;
   }
 }
 

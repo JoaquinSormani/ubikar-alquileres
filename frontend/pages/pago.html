@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles/portal.css">
 <link rel="stylesheet" href="../styles/contrato.css?v=11">
-<link rel="stylesheet" href="pago.css?v=10">
+<link rel="stylesheet" href="pago.css?v=11">
 <link rel="stylesheet" href="../styles/vidrio.css">
 </head>
 <body>
@@ -36,6 +36,10 @@
       <span class="pago__sr">Buscar por DNI, nombre o propiedad</span>
       <input class="field__input" id="buscador" type="search" placeholder="Buscar por DNI, nombre o propiedad…" autocomplete="off" inputmode="search">
     </label>
+    <label class="pago__mes">
+      <span class="pago__sr">Filtrar por mes</span>
+      <select class="field__input" id="mes"><option value="">Todos los meses</option></select>
+    </label>
     <p class="pago__conteo" id="conteo" aria-live="polite"></p>
   </div>
 
@@ -57,7 +61,7 @@
     </section>
 
     <section class="pago__seccion" aria-labelledby="tituloReal">
-      <h2 class="pago__titulo" id="tituloReal">Pagos realizados este mes <span class="pago__badge pago__badge--ok" id="cantReal">0</span></h2>
+      <h2 class="pago__titulo" id="tituloReal">Pagos realizados <span class="pago__badge pago__badge--ok" id="cantReal">0</span></h2>
       <div class="pago__scroll">
         <table class="pago__tabla">
           <thead>
@@ -121,6 +125,6 @@
 
 <script src="../services/api.js"></script>
 
-<script src="pago.js?v=6"></script>
+<script src="pago.js?v=7"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import com.ubikar.modelo.Pago;
 import com.ubikar.servicio.PagoServicio;
 import com.ubikar.servicio.SolicitudPago;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Map;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -28,9 +29,10 @@ public class PagoControlador {
 
     private final PagoServicio pagoServicio = new PagoServicio();
 
+    /** Sin parámetro: todos los meses. Con ?mes=AAAA-MM: solo los cobros de ese mes. */
     @GetMapping("/panel")
-    public PagoServicio.PanelPagos panel() {
-        return pagoServicio.panel();
+    public PagoServicio.PanelPagos panel(@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes) {
+        return pagoServicio.panel(mes);
     }
 
     @GetMapping("/{id}/calculo")
