@@ -92,9 +92,9 @@ Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 9
 | 6 | Clic en **Registrar pago**. | "Confirmamos y el sistema registra el pago." | Pantalla **Pago registrado** con el detalle. |
 | 7 | Clic en **Ver recibo (PDF)**. Cerrar la pestaña. | "Se emite el recibo con su número correlativo." | El PDF en una pestaña nueva. |
 | 8 | Clic en **Cerrar**. | "El cobro pasó a *Pagos realizados* y bajó el contador de pendientes." | El cobro nuevo arriba de la tabla de realizados, con su número de recibo. |
-| 9 | Volver al inicio y entrar a **Actualizaciones**. Mostrar un contrato con una actualización ya aplicada. | "Esto lo hace el sistema solo en la fecha de ajuste, por ICL o IPC, y el cobro siguiente ya sale con el valor nuevo." | El panel de actualizaciones aplicadas y próximas. |
+| 9 | Volver al inicio y entrar a **Visualizar actualizaciones**. Mostrar un contrato con una actualización ya aplicada y, si corresponde, avisar al inquilino. | "Esto lo hace el sistema solo en la fecha de ajuste, por ICL o IPC, y el cobro siguiente ya sale con el valor nuevo." | El panel de actualizaciones aplicadas y próximas. |
 
-**Antes de la exposición:** revisar en *Actualizaciones* qué contrato tiene una actualización aplicada para mostrar en el paso 9.
+**Antes de la exposición:** revisar en *Visualizar actualizaciones* qué contrato tiene una actualización aplicada para mostrar en el paso 9.
 
 ---
 
