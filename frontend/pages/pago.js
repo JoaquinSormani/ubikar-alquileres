@@ -122,9 +122,9 @@ function filaRealizada(f) {
   const tr = el("tr");
   tr.append(celda(String(f.numeroRecibo ?? f.idPago).padStart(8, "0")), celda(fechaTexto(f.fechaPago)), celda(quien(f)), celda(f.direccion), celda(capitalizar(f.periodoTexto)),
     celda(ETIQUETA_MEDIO[f.medioPago] || "—"));
-  const total = [el("span", "", dinero.format(f.total))];
-  if (f.diasAtraso > 0) total.push(el("span", "pago__sub pago__mora", `incluye ${dinero.format(f.punitorio)} de punitorio`));
-  tr.append(celda(total, "pago__num"));
+  // El punitorio va en su propia columna (como en pendientes): así todas las filas miden lo mismo.
+  tr.append(celda(f.diasAtraso > 0 ? dinero.format(f.punitorio) : "—", f.diasAtraso > 0 ? "pago__num pago__mora" : "pago__num"));
+  tr.append(celda(dinero.format(f.total), "pago__num"));
   const recibo = el("a", "btn btn--ghost", "Recibo");
   recibo.href = `${API}/pagos/${f.idPago}/recibo`;
   recibo.target = "_blank";
