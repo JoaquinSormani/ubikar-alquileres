@@ -5,9 +5,33 @@ const ETIQUETA_MEDIO = Object.fromEntries(MEDIOS);
 const $ = (id) => document.getElementById(id);
 const dinero = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 
-let panel = { pendientes: [], realizados: [], meses: [] };
+let panel = { meses: [] };
 let filaEnCobro = null;
 let temporizadorFecha = null;
+let temporizadorBusqueda = null;
+
+// Las dos tablas (pendientes y realizados) se piden de a una página al servidor. Cada página trae el cursor de la
+// siguiente (el último cobro visto), así que un cobro que se paga o un pago que se registra no repite ni saltea
+// filas en las otras páginas. "cursores[i]" es con qué se pide la página i (null = la primera).
+function crearLista(config) {
+  return { ...config, datos: { filas: [], total: 0, siguiente: null }, cursores: [null], pagina: 0, pedido: 0 };
+}
+
+const pendientes = crearLista({
+  ruta: "/pagos/pendientes", tamanio: 5, fila: filaPendiente,
+  cuerpo: "tbPend", vacio: "vacioPend", cantidad: "cantPend",
+  paginas: "paginasPend", rango: "rangoPend", numero: "paginaPend", anterior: "anteriorPend", siguiente: "siguientePend",
+  textoVacio: (buscando, mes) => buscando ? "Ningún cobro pendiente coincide con la búsqueda."
+    : mes ? `No hay pagos pendientes de ${mesTexto(mes)}.` : "No hay pagos pendientes: todos los contratos están al día.",
+});
+
+const realizados = crearLista({
+  ruta: "/pagos/realizados", tamanio: 10, fila: filaRealizada,
+  cuerpo: "tbReal", vacio: "vacioReal", cantidad: "cantReal",
+  paginas: "paginas", rango: "rango", numero: "paginaActual", anterior: "anteriorBtn", siguiente: "siguienteBtn",
+  textoVacio: (buscando, mes) => buscando ? "Ningún pago coincide con la búsqueda."
+    : mes ? `Todavía no se registraron pagos de ${mesTexto(mes)}.` : "Todavía no se registraron pagos.",
+});
 
 // ---------- utilidades ----------
 
@@ -61,18 +85,6 @@ async function pedir(ruta, opciones) {
   const respuesta = await fetch(`${API}${ruta}`, opciones);
   const cuerpo = await respuesta.json().catch(() => ({}));
   return { ok: respuesta.ok, estado: respuesta.status, cuerpo };
-}
-
-// ---------- buscador en vivo ----------
-
-// Con cada letra o número se acotan las filas: el DNI coincide por el principio; el nombre y la propiedad, en cualquier parte.
-function coincide(fila, consulta) {
-  if (!consulta) return true;
-  const digitos = soloDigitos(consulta);
-  const texto = limpiar(consulta);
-  return fila.inquilinos.some((i) => (digitos && soloDigitos(i.dni).startsWith(digitos))
-      || limpiar(`${i.nombre} ${i.apellido}`).includes(texto))
-    || limpiar(fila.direccion).includes(texto);
 }
 
 function celda(contenido, clase) {
@@ -130,22 +142,21 @@ function pintarTabla(cuerpo, filas, crear, vacio, textoVacio) {
   vacio.textContent = textoVacio;
 }
 
-function pintarTablas() {
-  const consulta = $("buscador").value;
-  const pendientes = panel.pendientes.filter((f) => coincide(f, consulta));
-  const realizados = panel.realizados.filter((f) => coincide(f, consulta));
+function pintarLista(lista) {
+  const buscando = $("buscador").value.trim() !== "";
   const mes = $("mes").value;
-  const buscando = consulta.trim() !== "";
-  pintarTabla($("tbPend"), pendientes, filaPendiente, $("vacioPend"),
-    buscando ? "Ningún cobro pendiente coincide con la búsqueda."
-      : mes ? `No hay pagos pendientes de ${mesTexto(mes)}.` : "No hay pagos pendientes: todos los contratos están al día.");
-  pintarTabla($("tbReal"), realizados, filaRealizada, $("vacioReal"),
-    buscando ? "Ningún pago coincide con la búsqueda."
-      : mes ? `Todavía no se registraron pagos de ${mesTexto(mes)}.` : "Todavía no se registraron pagos.");
-  $("cantPend").textContent = pendientes.length;
-  $("cantReal").textContent = realizados.length;
+  const { filas, total, siguiente } = lista.datos;
+  pintarTabla($(lista.cuerpo), filas, lista.fila, $(lista.vacio), lista.textoVacio(buscando, mes));
+  $(lista.cantidad).textContent = total;
+  const desde = lista.pagina * lista.tamanio + 1;
+  const totalPaginas = Math.max(1, Math.ceil(total / lista.tamanio), lista.pagina + 1);
+  $(lista.paginas).hidden = filas.length === 0 || (lista.pagina === 0 && !siguiente);
+  $(lista.rango).textContent = filas.length ? `Mostrando ${desde}–${desde + filas.length - 1} de ${total}` : "";
+  $(lista.numero).textContent = `Página ${lista.pagina + 1} de ${totalPaginas}`;
+  $(lista.anterior).disabled = lista.pagina === 0;
+  $(lista.siguiente).disabled = !siguiente;
   $("conteo").textContent = buscando
-    ? `${pendientes.length} de ${panel.pendientes.length} pendientes · ${realizados.length} de ${panel.realizados.length} realizados`
+    ? `${pendientes.datos.total} ${plural(pendientes.datos.total, "pendiente", "pendientes")} · ${realizados.datos.total} ${plural(realizados.datos.total, "realizado", "realizados")} que coinciden`
     : "";
 }
 
@@ -159,18 +170,56 @@ function llenarMeses() {
   select.value = (panel.meses || []).includes(elegido) ? elegido : "";
 }
 
+// Arma los cobros del mes y trae los meses que tienen cobros (para el selector).
 async function cargarPanel() {
   try {
-    const mes = $("mes").value;
-    const r = await pedir(`/pagos/panel${mes ? `?mes=${mes}` : ""}`);
+    const r = await pedir("/pagos/panel");
     if (!r.ok) throw new Error("panel");
     $("offline").hidden = true;
     panel = r.cuerpo;
     llenarMeses();
-    pintarTablas();
   } catch (err) {
     $("offline").hidden = false;
   }
+}
+
+// Pide una página de una de las tablas. Con "reiniciar" vuelve a la primera (cambió el mes o la búsqueda, o se registró un pago).
+async function cargarLista(lista, reiniciar) {
+  if (reiniciar) {
+    lista.cursores = [null];
+    lista.pagina = 0;
+  }
+  const mio = ++lista.pedido;
+  const params = new URLSearchParams({ tamanio: lista.tamanio });
+  const mes = $("mes").value;
+  if (mes) params.set("mes", mes);
+  const texto = $("buscador").value.trim();
+  if (texto) params.set("q", texto);
+  if (lista.cursores[lista.pagina]) params.set("despues", lista.cursores[lista.pagina]);
+  try {
+    const r = await pedir(`${lista.ruta}?${params}`);
+    if (mio !== lista.pedido) return; // mientras tanto se pidió otra cosa: esta respuesta ya no vale
+    if (!r.ok) throw new Error(lista.ruta);
+    $("offline").hidden = true;
+    lista.datos = r.cuerpo;
+    if (lista.datos.siguiente) lista.cursores[lista.pagina + 1] = lista.datos.siguiente;
+    else lista.cursores.length = lista.pagina + 1;
+    pintarLista(pendientes);
+    pintarLista(realizados);
+  } catch (err) {
+    $("offline").hidden = false;
+  }
+}
+
+function cargarListas() {
+  cargarLista(pendientes, true);
+  cargarLista(realizados, true);
+}
+
+// Primero el panel (arma los cobros que falten), después las páginas, para que ya los encuentren.
+async function cargarTodo() {
+  await cargarPanel();
+  cargarListas();
 }
 
 // ---------- cuadro para cobrar ----------
@@ -268,10 +317,10 @@ async function registrar(evento) {
     });
     if (r.ok && r.cuerpo.id !== undefined) {
       mostrarExito(r.cuerpo);
-      cargarPanel(); // el cobro sale de pendientes y aparece en realizados
+      cargarTodo(); // el cobro sale de pendientes y aparece arriba de realizados
     } else if (r.estado === 400) {
       mostrarErrorCobro(r.cuerpo.error || "Los datos no son válidos. Revisalos e intentá de nuevo.");
-      cargarPanel();
+      cargarTodo();
     } else {
       mostrarErrorCobro("El servidor no pudo registrar el pago. Intentá de nuevo en unos minutos.");
     }
@@ -341,8 +390,25 @@ function mostrarExito(respuesta) {
 
 // ---------- eventos ----------
 
-$("buscador").addEventListener("input", pintarTablas);
-$("mes").addEventListener("change", cargarPanel);
+$("buscador").addEventListener("input", () => {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(cargarListas, 300); // se busca en el servidor, sin pedir con cada letra
+});
+$("mes").addEventListener("change", cargarListas);
+[pendientes, realizados].forEach((lista) => {
+  $(lista.anterior).addEventListener("click", () => {
+    if (lista.pagina > 0) {
+      lista.pagina--;
+      cargarLista(lista, false);
+    }
+  });
+  $(lista.siguiente).addEventListener("click", () => {
+    if (lista.datos.siguiente) {
+      lista.pagina++;
+      cargarLista(lista, false);
+    }
+  });
+});
 $("cobroForm").addEventListener("submit", registrar);
 $("fechaPago").addEventListener("input", alCambiarFecha);
 $("fechaPago").addEventListener("change", alCambiarFecha);
@@ -360,4 +426,4 @@ $("cobroDialog").addEventListener("close", () => {
   clearTimeout(temporizadorFecha);
 });
 
-cargarPanel();
+cargarTodo();

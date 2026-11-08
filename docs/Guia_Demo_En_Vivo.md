@@ -32,6 +32,7 @@ Esta guía sirve para armar el sistema en otra computadora (la netbook de Matía
              (SELECT COUNT(*) FROM ubikar.pago WHERE estado = 'PENDIENTE') AS pendientes;
       ```
       Resultado esperado: **6 contratos, 44 pagos y 8 pendientes** (y 36 realizados).
+      Los dos archivos ya incluyen los índices que usan las tablas paginadas. Si la base `ubikar` ya existía de antes y **no** se vuelve a cargar `bd_ubikar.sql`, ejecutar una vez `bd_migracion_indice_pagos.sql` (se puede repetir sin problema).
 
 3. **Obtener el programa** (**una** de las dos opciones):
    - **Compilarlo:** `mvn -DskipTests package` (genera `target\ubikar-alquileres.jar`).
@@ -83,7 +84,7 @@ Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 9
 
 | # | Hacés | Decís | Se ve |
 |---|---|---|---|
-| 1 | En el inicio, clic en la tarjeta **Registrar pago**. | "Este es el caso de uso que vamos a ver funcionando. La propiedad, el contrato y la actualización ya están cargados." | Dos tablas: *Pagos pendientes* y *Pagos realizados*, con sus contadores. |
+| 1 | En el inicio, clic en la tarjeta **Registrar pago**. | "Este es el caso de uso que vamos a ver funcionando. La propiedad, el contrato y la actualización ya están cargados." | Dos tablas: *Pagos pendientes* (5 por página, los más vencidos primero) y *Pagos realizados* (10 por página), con sus contadores y botones **Anterior / Siguiente**. |
 | 2 | Elegir el mes **octubre** en el selector. Escribir un apellido o DNI en el buscador. | "El responsable puede filtrar por mes y buscar por DNI, nombre o propiedad." | Las tablas se filtran. |
 | 3 | En *Pagos pendientes*, elegir un cobro vencido de octubre y hacer clic en su acción. | "Elegimos el cobro vencido del inquilino." | Se abre la ventana **Cobrar alquiler** con el resumen. |
 | 4 | Dejar la fecha de hoy y elegir la forma de pago (por ejemplo, transferencia). | "Ingresamos la fecha y la forma de pago, y el sistema calcula solo la mora." | Tres líneas: *Alquiler*, *Punitorio* y *Total a cobrar* (1 % diario por día de atraso). |

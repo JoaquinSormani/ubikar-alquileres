@@ -139,6 +139,8 @@ CREATE TABLE `ubikar`.`pago` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_pago_periodo` (`idContrato`, `periodo`),
   UNIQUE KEY `uq_pago_recibo` (`numeroRecibo`),
+  KEY `idx_pago_periodo_recibo` (`periodo`, `numeroRecibo`),
+  KEY `idx_pago_estado_vencimiento` (`estado`, `fechaVencimiento`),
   FOREIGN KEY (`idContrato`) REFERENCES `ubikar`.`contrato` (`id`));
 
 CREATE TABLE `ubikar`.`liquidacion` (

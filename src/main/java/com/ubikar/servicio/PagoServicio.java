@@ -20,12 +20,15 @@ import com.ubikar.modelo.Propietario;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.sql2o.Connection;
 
 /**
@@ -58,56 +61,173 @@ public class PagoServicio {
     }
 
     /**
-     * Pendientes de cobro (con el punitorio a la fecha) y pagos realizados, de todos los meses o de uno solo.
-     * "meses" lista (del más nuevo al más viejo, formato AAAA-MM) los meses que tienen cobros, para el selector.
+     * Lo mínimo que necesita la pantalla antes de pedir las páginas: la fecha de hoy y los meses que tienen cobros
+     * (del más nuevo al más viejo, formato AAAA-MM), para el selector. Los pendientes y los realizados no vienen
+     * acá: son muchos y se piden de a una página con pendientes(...) y realizados(...).
      */
-    public record PanelPagos(LocalDate fecha, List<FilaPago> pendientes, List<FilaPago> realizados, List<String> meses) {
+    public record PanelPagos(LocalDate fecha, List<String> meses) {
+    }
+
+    /**
+     * Una página de cobros. "total" es la cantidad que cumple el filtro y "siguiente" es el cursor para pedir la
+     * página que sigue (null cuando no hay más).
+     */
+    public record PaginaPagos(List<FilaPago> filas, int total, int tamanio, String siguiente) {
     }
 
     public record Calculo(int diasAtraso, BigDecimal punitorio, BigDecimal total) {
     }
 
+    static final int TAMANIO_PENDIENTES = 5;
+    static final int TAMANIO_REALIZADOS = 10;
+    static final int TAMANIO_MAXIMO = 50;
+    static final int LARGO_MAXIMO_BUSQUEDA = 100;
+    // Cursor de los realizados: "<número de recibo>-<id del pago>" del último pago mostrado.
+    private static final Pattern CURSOR_REALIZADOS = Pattern.compile("^(\\d{1,9})-(\\d{1,9})$");
+    // Cursor de los pendientes: "<vencimiento AAAA-MM-DD>_<id del cobro>" del último cobro mostrado.
+    private static final Pattern CURSOR_PENDIENTES = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2})_(\\d{1,9})$");
+
     // ---------- consultas ----------
 
-    /** Todos los cobros pendientes y los pagos realizados de los contratos vigentes, para la pantalla de Registrar Pago. */
+    /**
+     * Arma los cobros que faltan de cada contrato vigente (uno por mes, hasta el mes actual) y devuelve los meses para el
+     * selector. La pantalla lo llama una vez al cargar; después pide las páginas, que ya no generan nada.
+     */
     public PanelPagos panel() {
-        return panel(null);
-    }
-
-    /** Igual que panel(), pero con un mes solo se devuelven los cobros de ese mes (null = todos los meses). */
-    public PanelPagos panel(YearMonth mes) {
         LocalDate hoy = LocalDate.now();
-        List<FilaPago> pendientes = new ArrayList<>();
-        List<FilaPago> realizados = new ArrayList<>();
-        Set<String> meses = new TreeSet<>(Comparator.reverseOrder());
         for (Contrato c : contratoDAO.readAll()) {
             if (c.getFechaInicio().isAfter(hoy) || c.getFechaFin().isBefore(hoy)) {
                 continue;
             }
             asegurarCobros(c, hoy);
-            Propiedad propiedad = propiedadDAO.read(c.getIdPropiedad());
-            String direccion = propiedad == null ? "" : propiedad.getDireccion();
-            List<PersonaVista> inquilinos = new ArrayList<>();
-            for (Inquilino i : contratoDAO.selectInquilinos(c.getId())) {
-                inquilinos.add(new PersonaVista(i.getNombre(), i.getApellido(), i.getDni(), i.getTelefono()));
-            }
-            for (Pago p : pagoDAO.selectByContrato(c.getId())) {
-                YearMonth periodo = YearMonth.from(p.getPeriodo());
-                meses.add(periodo.toString());
-                if (mes != null && !periodo.equals(mes)) {
-                    continue;
-                }
-                if (p.getEstado() == EstadoPago.PENDIENTE) {
-                    Calculo calculo = calcular(p, hoy);
-                    pendientes.add(fila(p, c, direccion, inquilinos, calculo.diasAtraso(), calculo.punitorio()));
-                } else if (p.getFecha() != null) {
-                    realizados.add(fila(p, c, direccion, inquilinos, p.getDiasAtraso(), p.getPunitorio()));
-                }
-            }
         }
-        pendientes.sort(Comparator.comparing(FilaPago::fechaVencimiento).thenComparing(FilaPago::direccion, String.CASE_INSENSITIVE_ORDER));
-        realizados.sort(Comparator.comparing(FilaPago::numeroRecibo, Comparator.nullsLast(Comparator.<Integer>reverseOrder())).thenComparing(FilaPago::idPago, Comparator.reverseOrder()));
-        return new PanelPagos(hoy, pendientes, realizados, new ArrayList<>(meses));
+        List<String> meses = new ArrayList<>();
+        for (LocalDate periodo : pagoDAO.selectPeriodos()) {
+            meses.add(YearMonth.from(periodo).toString());
+        }
+        return new PanelPagos(hoy, meses);
+    }
+
+    /**
+     * Cobros pendientes de a una página, del más vencido al menos vencido, con el punitorio calculado a hoy y filtro opcional
+     * por mes y por texto (DNI, nombre o dirección). "despues" es el cursor que devolvió la página anterior (null = la primera).
+     */
+    public PaginaPagos pendientes(YearMonth mes, String texto, String despues, Integer tamanio) {
+        int n = tamanioValido(tamanio, TAMANIO_PENDIENTES);
+        String busqueda = busquedaValida(texto);
+        LocalDate vencimientoAnterior = null;
+        Integer idAnterior = null;
+        if (despues != null && !despues.isBlank()) {
+            Matcher m = CURSOR_PENDIENTES.matcher(despues.trim());
+            requerido(m.matches(), MENSAJE_CURSOR);
+            try {
+                vencimientoAnterior = LocalDate.parse(m.group(1));
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException(MENSAJE_CURSOR);
+            }
+            idAnterior = Integer.valueOf(m.group(2));
+        }
+        LocalDate hoy = LocalDate.now();
+        LocalDate periodo = mes == null ? null : mes.atDay(1);
+        List<Pago> tanda = pagoDAO.selectPendientes(hoy, periodo, busqueda, vencimientoAnterior, idAnterior, n + 1);
+        boolean hayMas = tanda.size() > n;
+        List<Pago> pagina = hayMas ? tanda.subList(0, n) : tanda;
+        VistaDeContratos vista = new VistaDeContratos();
+        List<FilaPago> filas = new ArrayList<>();
+        for (Pago p : pagina) {
+            Contrato c = vista.contrato(p.getIdContrato());
+            Calculo calculo = calcular(p, hoy);
+            filas.add(fila(p, c, vista.direccion(c), vista.inquilinos(c), calculo.diasAtraso(), calculo.punitorio()));
+        }
+        String siguiente = null;
+        if (hayMas) {
+            Pago ultimo = pagina.get(pagina.size() - 1);
+            siguiente = ultimo.getFechaVencimiento() + "_" + ultimo.getId();
+        }
+        return new PaginaPagos(filas, pagoDAO.contarPendientes(hoy, periodo, busqueda), n, siguiente);
+    }
+
+    /**
+     * Pagos realizados de a una página, del recibo más nuevo al más viejo, con filtro opcional por mes y por texto
+     * (DNI, nombre o dirección). La paginación es por cursor: "despues" es el cursor que devolvió la página anterior
+     * (null = la primera). Un pago nuevo siempre trae un recibo mayor, así que aparece arriba de todo y no repite ni
+     * saltea filas en las páginas siguientes.
+     */
+    public PaginaPagos realizados(YearMonth mes, String texto, String despues, Integer tamanio) {
+        int n = tamanioValido(tamanio, TAMANIO_REALIZADOS);
+        String busqueda = busquedaValida(texto);
+        Integer reciboAnterior = null;
+        Integer idAnterior = null;
+        if (despues != null && !despues.isBlank()) {
+            Matcher m = CURSOR_REALIZADOS.matcher(despues.trim());
+            requerido(m.matches(), MENSAJE_CURSOR);
+            reciboAnterior = Integer.valueOf(m.group(1));
+            idAnterior = Integer.valueOf(m.group(2));
+        }
+        LocalDate periodo = mes == null ? null : mes.atDay(1);
+        // Se piden n + 1: la fila de más solo sirve para saber si hay una página siguiente.
+        List<Pago> tanda = pagoDAO.selectRealizados(periodo, busqueda, reciboAnterior, idAnterior, n + 1);
+        boolean hayMas = tanda.size() > n;
+        List<Pago> pagina = hayMas ? tanda.subList(0, n) : tanda;
+        VistaDeContratos vista = new VistaDeContratos();
+        List<FilaPago> filas = new ArrayList<>();
+        for (Pago p : pagina) {
+            Contrato c = vista.contrato(p.getIdContrato());
+            filas.add(fila(p, c, vista.direccion(c), vista.inquilinos(c), p.getDiasAtraso(), p.getPunitorio()));
+        }
+        String siguiente = null;
+        if (hayMas) {
+            Pago ultimo = pagina.get(pagina.size() - 1);
+            siguiente = ultimo.getNumeroRecibo() + "-" + ultimo.getId();
+        }
+        return new PaginaPagos(filas, pagoDAO.contarRealizados(periodo, busqueda), n, siguiente);
+    }
+
+    private static final String MENSAJE_CURSOR = "El punto de partida de la página no es válido.";
+
+    private static int tamanioValido(Integer tamanio, int porDefecto) {
+        int n = tamanio == null ? porDefecto : tamanio;
+        requerido(n >= 1 && n <= TAMANIO_MAXIMO, "El tamaño de la página tiene que estar entre 1 y " + TAMANIO_MAXIMO + ".");
+        return n;
+    }
+
+    private static String busquedaValida(String texto) {
+        String busqueda = texto == null ? "" : texto.trim();
+        requerido(busqueda.length() <= LARGO_MAXIMO_BUSQUEDA, "La búsqueda no puede superar los " + LARGO_MAXIMO_BUSQUEDA + " caracteres.");
+        return busqueda;
+    }
+
+    /** Datos de los contratos de una página, leídos una sola vez por contrato aunque aparezca en varias filas. */
+    private final class VistaDeContratos {
+
+        private final Map<Integer, Contrato> contratos = new HashMap<>();
+        private final Map<Integer, String> direcciones = new HashMap<>();
+        private final Map<Integer, List<PersonaVista>> inquilinos = new HashMap<>();
+
+        Contrato contrato(Integer id) {
+            return contratos.computeIfAbsent(id, PagoServicio.this::contrato);
+        }
+
+        String direccion(Contrato c) {
+            return direcciones.computeIfAbsent(c.getId(), k -> direccionDe(c));
+        }
+
+        List<PersonaVista> inquilinos(Contrato c) {
+            return inquilinos.computeIfAbsent(c.getId(), k -> inquilinosDe(c));
+        }
+    }
+
+    private String direccionDe(Contrato c) {
+        Propiedad propiedad = propiedadDAO.read(c.getIdPropiedad());
+        return propiedad == null ? "" : propiedad.getDireccion();
+    }
+
+    private List<PersonaVista> inquilinosDe(Contrato c) {
+        List<PersonaVista> inquilinos = new ArrayList<>();
+        for (Inquilino i : contratoDAO.selectInquilinos(c.getId())) {
+            inquilinos.add(new PersonaVista(i.getNombre(), i.getApellido(), i.getDni(), i.getTelefono()));
+        }
+        return inquilinos;
     }
 
     /** Mora y total de un cobro pendiente si se pagara en la fecha indicada (hoy si no viene). */

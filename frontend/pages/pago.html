@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles/portal.css">
 <link rel="stylesheet" href="../styles/contrato.css?v=11">
-<link rel="stylesheet" href="pago.css?v=11">
+<link rel="stylesheet" href="pago.css?v=12">
 <link rel="stylesheet" href="../styles/vidrio.css">
 </head>
 <body>
@@ -34,7 +34,7 @@
     <label class="pago__buscador">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <span class="pago__sr">Buscar por DNI, nombre o propiedad</span>
-      <input class="field__input" id="buscador" type="search" placeholder="Buscar por DNI, nombre o propiedad…" autocomplete="off" inputmode="search">
+      <input class="field__input" id="buscador" type="search" maxlength="100" placeholder="Buscar por DNI, nombre o propiedad…" autocomplete="off" inputmode="search">
     </label>
     <label class="pago__mes">
       <span class="pago__sr">Filtrar por mes</span>
@@ -58,6 +58,14 @@
         </table>
       </div>
       <p class="pago__vacio" id="vacioPend" hidden></p>
+<nav class="pago__paginas" id="paginasPend" aria-label="Páginas de pagos pendientes" hidden>
+<p class="pago__rango" id="rangoPend" aria-live="polite"></p>
+<div class="pago__paginas-botones">
+<button type="button" class="btn btn--ghost" id="anteriorPend">Anterior</button>
+<span class="pago__pagina" id="paginaPend"></span>
+<button type="button" class="btn btn--ghost" id="siguientePend">Siguiente</button>
+</div>
+</nav>
     </section>
 
     <section class="pago__seccion" aria-labelledby="tituloReal">
@@ -74,6 +82,14 @@
         </table>
       </div>
       <p class="pago__vacio" id="vacioReal" hidden></p>
+<nav class="pago__paginas" id="paginas" aria-label="Páginas de pagos realizados" hidden>
+<p class="pago__rango" id="rango" aria-live="polite"></p>
+<div class="pago__paginas-botones">
+<button type="button" class="btn btn--ghost" id="anteriorBtn">Anterior</button>
+<span class="pago__pagina" id="paginaActual"></span>
+<button type="button" class="btn btn--ghost" id="siguienteBtn">Siguiente</button>
+</div>
+</nav>
     </section>
   </main>
 </div>
@@ -125,6 +141,6 @@
 
 <script src="../services/api.js"></script>
 
-<script src="pago.js?v=7"></script>
+<script src="pago.js?v=9"></script>
 </body>
 </html>

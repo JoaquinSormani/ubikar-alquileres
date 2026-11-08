@@ -174,6 +174,45 @@
   font-size: 0.9rem;
 }
 
+/* ---------- paginador de pagos realizados ---------- */
+.pago__paginas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.pago__rango {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.pago__paginas-botones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pago__pagina {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.pago__paginas .btn {
+  padding: 8px 16px;
+  min-height: 0;
+  font-size: 0.85rem;
+}
+
+.pago__paginas .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .pago__tabla .btn {
   padding: 8px 16px;
   min-height: 0;

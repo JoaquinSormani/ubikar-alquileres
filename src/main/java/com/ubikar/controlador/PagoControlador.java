@@ -29,10 +29,31 @@ public class PagoControlador {
 
     private final PagoServicio pagoServicio = new PagoServicio();
 
-    /** Sin parámetro: todos los meses. Con ?mes=AAAA-MM: solo los cobros de ese mes. */
+    /** Genera los cobros que faltan de cada mes y devuelve los meses que tienen cobros (para el selector). */
     @GetMapping("/panel")
-    public PagoServicio.PanelPagos panel(@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes) {
-        return pagoServicio.panel(mes);
+    public PagoServicio.PanelPagos panel() {
+        return pagoServicio.panel();
+    }
+
+    /**
+     * Cobros pendientes de a una página, del más vencido al menos vencido. Parámetros (todos opcionales): mes=AAAA-MM,
+     * q=texto a buscar (DNI, nombre o dirección), tamanio=cantidad por página y despues=cursor que devolvió la página anterior.
+     */
+    @GetMapping("/pendientes")
+    public PagoServicio.PaginaPagos pendientes(@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String despues,
+            @RequestParam(required = false) Integer tamanio) {
+        return pagoServicio.pendientes(mes, q, despues, tamanio);
+    }
+
+    /** Igual que /pendientes pero para los pagos ya realizados, del recibo más nuevo al más viejo. */
+    @GetMapping("/realizados")
+    public PagoServicio.PaginaPagos realizados(@RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String despues,
+            @RequestParam(required = false) Integer tamanio) {
+        return pagoServicio.realizados(mes, q, despues, tamanio);
     }
 
     @GetMapping("/{id}/calculo")
