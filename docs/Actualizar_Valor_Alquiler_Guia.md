@@ -1,4 +1,4 @@
-# Actualizar valor de alquiler — guía para Matías
+# Visualizar actualizaciones (actualización automática del valor del alquiler) — guía para Matías
 
 Este es el tercer caso de uso de la entrega final. Esta guía dice **qué hace**, **qué ya existe en el código** y **qué hay que escribir**, con el código de la consulta al BCRA ya probado contra la API real.
 
@@ -324,7 +324,7 @@ Para probar la parte automática sin esperar a la madrugada, alcanza con **reini
 
 `frontend/pages/actualizacion.html|js|css`, enlazada desde `index.html`:
 
-- Tabla **"Actualizaciones"** (fecha, inquilino, propiedad, índice, desde cuándo rige, valor anterior y nuevo, con el porcentaje) y un botón **Avisar** que abre WhatsApp con el mensaje armado.
+- Pantalla **"Visualizar actualizaciones"**: tabla **"Actualizaciones"** (fecha, inquilino, propiedad, índice, desde cuándo rige, valor anterior y nuevo, con el porcentaje) y un botón **Avisar** que abre WhatsApp con el mensaje armado.
 - **Selector de mes** (igual que en Registrar Pago) con los meses en que hubo actualizaciones, y buscador por DNI, nombre o propiedad.
 - **Modo demostración:** mientras el servidor responda 404 en `/api/actualizaciones/panel`, la pantalla muestra datos de ejemplo con un aviso. Apenas exista el endpoint, pasa sola a los datos reales. Con `?demo` al final de la dirección se fuerza el modo demostración.
 
