@@ -32,7 +32,7 @@ Esta guía sirve para armar el sistema en otra computadora (la netbook de Matía
              (SELECT COUNT(*) FROM ubikar.pago WHERE estado = 'PENDIENTE') AS pendientes;
       ```
       Resultado esperado: **6 contratos, 44 pagos y 8 pendientes** (y 36 realizados).
-      Los dos archivos ya incluyen los índices que usan las tablas paginadas. Si la base `ubikar` ya existía de antes y **no** se vuelve a cargar `bd_ubikar.sql`, ejecutar una vez `bd_migracion_indice_pagos.sql` (se puede repetir sin problema).
+      Los dos archivos ya incluyen los índices que usan las tablas paginadas. Si la base `ubikar` ya existía de antes y **no** se vuelve a cargar `bd_ubikar.sql`, ejecutar una vez `bd_migracion_indice_pagos.sql` y `bd_migracion_indice_actualizaciones.sql` (se pueden repetir sin problema).
 
 3. **Obtener el programa** (**una** de las dos opciones):
    - **Compilarlo:** `mvn -DskipTests package` (genera `target\ubikar-alquileres.jar`).
@@ -92,7 +92,7 @@ Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 9
 | 6 | Clic en **Registrar pago**. | "Confirmamos y el sistema registra el pago." | Pantalla **Pago registrado** con el detalle. |
 | 7 | Clic en **Ver recibo (PDF)**. Cerrar la pestaña. | "Se emite el recibo con su número correlativo." | El PDF en una pestaña nueva. |
 | 8 | Clic en **Cerrar**. | "El cobro pasó a *Pagos realizados* y bajó el contador de pendientes." | El cobro nuevo arriba de la tabla de realizados, con su número de recibo. |
-| 9 | Volver al inicio y entrar a **Visualizar actualizaciones**. Mostrar un contrato con una actualización ya aplicada y, si corresponde, avisar al inquilino. | "Esto lo hace el sistema solo en la fecha de ajuste, por ICL o IPC, y el cobro siguiente ya sale con el valor nuevo." | El panel de actualizaciones aplicadas y próximas. |
+| 9 | Volver al inicio y entrar a **Visualizar actualizaciones**. Mostrar un contrato con una actualización ya aplicada y, si corresponde, avisar al inquilino. | "Esto lo hace el sistema solo en la fecha de ajuste, por ICL o IPC, y el cobro siguiente ya sale con el valor nuevo." | Dos tablas paginadas: *Actualizaciones aplicadas* (10 por página) y *Próximas actualizaciones* (5 por página). |
 
 **Antes de la exposición:** revisar en *Visualizar actualizaciones* qué contrato tiene una actualización aplicada para mostrar en el paso 9.
 

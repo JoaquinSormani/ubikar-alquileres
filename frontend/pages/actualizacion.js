@@ -1,53 +1,48 @@
 "use strict";
 
 /*
- * Actualizar valor de alquiler: primera versión del frontend.
+ * Visualizar actualizaciones.
  *
  * La actualización es AUTOMÁTICA: el backend la aplica solo cuando llega la fecha de ajuste de cada contrato
  * (tarea programada). Esta pantalla no actualiza nada: muestra lo que ya se aplicó, lo que viene, y deja avisar
  * al inquilino por WhatsApp (el contrato dice que la corredora le comunica el nuevo valor).
  *
  * Contrato con el backend (ver docs/Actualizar_Valor_Alquiler_Guia.md):
- *   GET /api/actualizaciones/panel -> { aplicadas: [...], proximas: [...] }
- *   (el filtro por mes se hace acá, con periodoDesde; las próximas se ven al elegir un mes)
- *
- * Mientras el servidor no tenga esa ruta (responde 404), la pantalla funciona en MODO DEMOSTRACIÓN con datos de
- * ejemplo. Apenas el backend la implemente, pasa sola a usar los datos reales.
- * Con ?demo en la dirección se fuerza el modo demostración (por si no hay servidor ni internet).
+ *   GET /api/actualizaciones/panel                  -> { fecha, proximoMes, meses: ["AAAA-MM", ...] }
+ *   GET /api/actualizaciones/aplicadas?mes&q&despues&tamanio  -> { filas, total, tamanio, siguiente }
+ *   GET /api/actualizaciones/proximas?mes&q&despues&tamanio   -> { filas, total, tamanio, siguiente }
+ * Las dos tablas se piden de a una página, con el mismo cursor que Registrar pago.
  */
 
 const $ = (id) => document.getElementById(id);
 const dinero = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
 const decimal = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-let panel = { aplicadas: [], proximas: [] };
-let demo = false;
+let panel = { meses: [], proximoMes: "" };
+let temporizadorBusqueda = null;
 
-// ---------- datos de demostración (personas y direcciones inventadas; índices reales del BCRA a noviembre de 2026) ----------
+// Las dos tablas (aplicadas y próximas) se piden de a una página al servidor. Cada página trae el cursor de la
+// siguiente (la última fila vista), así que una actualización nueva no repite ni saltea filas en las otras páginas.
+// "cursores[i]" es con qué se pide la página i (null = la primera).
+function crearLista(config) {
+  return { ...config, datos: { filas: [], total: 0, siguiente: null }, cursores: [null], pagina: 0, pedido: 0 };
+}
 
-const CAMILA = { nombre: "Camila", apellido: "Rojas", dni: "30111222", telefono: "2664111222" };
-const DIEGO = { nombre: "Diego", apellido: "Pereyra", dni: "28333444", telefono: "" };
-const JUAN = { nombre: "Juan", apellido: "Perez", dni: "30555123", telefono: "2664001122" };
-const VALERIA = { nombre: "Valeria", apellido: "Sosa", dni: "33555666", telefono: "2664333444" };
+const aplicadas = crearLista({
+  ruta: "/actualizaciones/aplicadas", tamanio: 10, fila: filaAplicada,
+  cuerpo: "tbAplic", vacio: "vacioAplic", cantidad: "cantAplic",
+  paginas: "paginasAplic", rango: "rangoAplic", numero: "paginaAplic", anterior: "anteriorAplic", siguiente: "siguienteAplic",
+  textoVacio: (buscando, mes) => buscando ? "Ninguna actualización aplicada coincide con la búsqueda."
+    : mes ? `No se aplicaron actualizaciones en ${mesTexto(mes)}.` : "Todavía no se aplicó ninguna actualización.",
+});
 
-const DEMO = {
-  aplicadas: [
-    { id: 3, fecha: "2026-10-15", idContrato: 101, direccion: "Belgrano 1250, 2.º B", inquilinos: [CAMILA], indice: "ICL",
-      periodoDesde: "2026-10", periodicidad: 3, valorAnterior: 275818.25, valorNuevo: 292818.58, porcentaje: 6.16 },
-    { id: 2, fecha: "2026-10-01", idContrato: 102, direccion: "Colón 480, depto 1", inquilinos: [DIEGO], indice: "IPC",
-      periodoDesde: "2026-10", periodicidad: 3, valorAnterior: 180000, valorNuevo: 190455.48, porcentaje: 5.81 },
-    { id: 1, fecha: "2026-07-15", idContrato: 101, direccion: "Belgrano 1250, 2.º B", inquilinos: [CAMILA], indice: "ICL",
-      periodoDesde: "2026-07", periodicidad: 3, valorAnterior: 250000, valorNuevo: 275818.25, porcentaje: 10.33 },
-  ],
-  proximas: [
-    { idContrato: 103, direccion: "Junin 700, depto 3", inquilinos: [JUAN], indice: "ICL", periodicidad: 3,
-      fechaAjuste: "2026-12-01", periodoDesde: "2026-12", valorActual: 350621.31, estado: "PROGRAMADA" },
-    { idContrato: 104, direccion: "San Martín 95, local 3", inquilinos: [VALERIA], indice: "IPC", periodicidad: 3,
-      fechaAjuste: "2026-12-01", periodoDesde: "2026-12", valorActual: 320000, estado: "PROGRAMADA" },
-    { idContrato: 102, direccion: "Colón 480, depto 1", inquilinos: [DIEGO], indice: "IPC", periodicidad: 3,
-      fechaAjuste: "2027-01-01", periodoDesde: "2027-01", valorActual: 190455.48, estado: "PROGRAMADA" },
-  ],
-};
+const proximas = crearLista({
+  ruta: "/actualizaciones/proximas", tamanio: 5, fila: filaProxima,
+  cuerpo: "tbProx", vacio: "vacioProx", cantidad: "cantProx",
+  paginas: "paginasProx", rango: "rangoProx", numero: "paginaProx", anterior: "anteriorProx", siguiente: "siguienteProx",
+  textoVacio: (buscando, mes) => buscando ? "Ninguna próxima actualización coincide con la búsqueda."
+    : mes ? `No hay actualizaciones programadas para ${mesTexto(mes)}.` : "No hay actualizaciones próximas.",
+});
 
 // ---------- utilidades ----------
 
@@ -60,11 +55,6 @@ function el(tag, clase, texto) {
 
 function soloDigitos(valor) {
   return (valor || "").replace(/\D/g, "");
-}
-
-// Sin mayúsculas ni tildes, para que "jose" encuentre a "José".
-function limpiar(texto) {
-  return (texto || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
 
 function fechaTexto(iso) {
@@ -107,18 +97,6 @@ function telefonoWhatsApp(telefono) {
   const n = soloDigitos(telefono).replace(/^0+/, "");
   if (n.length < 8) return "";
   return n.startsWith("54") ? n : `549${n}`;
-}
-
-// ---------- buscador en vivo ----------
-
-// El DNI coincide por el principio; el nombre y la propiedad, en cualquier parte.
-function coincide(fila, consulta) {
-  if (!consulta) return true;
-  const digitos = soloDigitos(consulta);
-  const texto = limpiar(consulta);
-  return fila.inquilinos.some((i) => (digitos && soloDigitos(i.dni).startsWith(digitos))
-      || limpiar(`${i.nombre} ${i.apellido}`).includes(texto))
-    || limpiar(fila.direccion).includes(texto);
 }
 
 function celda(contenido, clase) {
@@ -185,85 +163,105 @@ function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// "AAAA-MM" del mes que viene.
-function mesSiguiente() {
-  const h = new Date();
-  const s = new Date(h.getFullYear(), h.getMonth() + 1, 1);
-  return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, "0")}`;
+function pintarLista(lista) {
+  const buscando = $("buscador").value.trim() !== "";
+  const mes = $("mes").value;
+  const { filas, total, siguiente } = lista.datos;
+  pintarTabla($(lista.cuerpo), filas, lista.fila, $(lista.vacio), lista.textoVacio(buscando, mes));
+  $(lista.cantidad).textContent = total;
+  const desde = lista.pagina * lista.tamanio + 1;
+  const totalPaginas = Math.max(1, Math.ceil(total / lista.tamanio), lista.pagina + 1);
+  $(lista.paginas).hidden = filas.length === 0 || (lista.pagina === 0 && !siguiente);
+  $(lista.rango).textContent = filas.length ? `Mostrando ${desde}–${desde + filas.length - 1} de ${total}` : "";
+  $(lista.numero).textContent = `Página ${lista.pagina + 1} de ${totalPaginas}`;
+  $(lista.anterior).disabled = lista.pagina === 0;
+  $(lista.siguiente).disabled = !siguiente;
+  $("conteo").textContent = buscando
+    ? `${aplicadas.datos.total} ${plural(aplicadas.datos.total, "aplicada", "aplicadas")} · ${proximas.datos.total} ${plural(proximas.datos.total, "próxima", "próximas")} que coinciden`
+    : "";
 }
 
-// El selector ofrece los meses con actualizaciones (aplicadas o programadas) y siempre el mes que viene,
-// del más nuevo al más viejo.
+// El selector ofrece el mes que viene (primero) y los meses con actualizaciones aplicadas o esperando el índice (los manda
+// el servidor), del más nuevo al más viejo.
 function llenarMeses() {
-  const elegido = $("mes").value;
-  const proximo = mesSiguiente();
-  // Del futuro solo se ofrece el mes que viene (los más lejanos no interesan); sí se ofrece cualquier mes pasado,
-  // aunque tenga una actualización esperando el índice.
-  const otros = [...new Set([...panel.aplicadas.map((a) => a.periodoDesde), ...(panel.proximas || []).map((p) => p.periodoDesde)])]
-    .filter((m) => m < proximo).sort().reverse();
-  const meses = [proximo, ...otros]; // el mes que viene va primero
   const select = $("mes");
+  const elegido = select.value;
   select.innerHTML = "";
   select.append(new Option("Todos los meses", ""));
-  meses.forEach((m) => select.append(new Option(`${capitalizar(mesTexto(m))}${m === proximo ? " · próximo mes" : ""}`, m)));
-  select.value = meses.includes(elegido) ? elegido : "";
-}
-
-function pintarTablas() {
-  const consulta = $("buscador").value;
-  const mes = $("mes").value;
-  const aplicadas = panel.aplicadas.filter((f) => (!mes || f.periodoDesde === mes) && coincide(f, consulta));
-  // Las que todavía no se aplicaron se ven al elegir un mes o al buscar (con "Todos los meses" y sin búsqueda solo va el historial).
-  const buscando = consulta.trim() !== "";
-  const proximas = mes || buscando ? (panel.proximas || []).filter((f) => (!mes || f.periodoDesde === mes) && coincide(f, consulta)) : [];
-  const filas = [...aplicadas.map((f) => ({ f, aplicada: true })), ...proximas.map((f) => ({ f, aplicada: false }))];
-  let vacio = "Todavía no se aplicó ninguna actualización.";
-  if (buscando) vacio = "Ninguna actualización coincide con la búsqueda.";
-  else if (mes) vacio = mes >= mesSiguiente() ? `No hay actualizaciones programadas para ${mesTexto(mes)}.` : `No se aplicaron actualizaciones en ${mesTexto(mes)}.`;
-  pintarTabla($("tbAplic"), filas, (x) => (x.aplicada ? filaAplicada(x.f) : filaProxima(x.f)), $("vacioAplic"), vacio);
-  $("cantAplic").textContent = filas.length;
-  $("conteo").textContent = buscando || mes ? `${filas.length} de ${panel.aplicadas.length + (panel.proximas || []).length} actualizaciones` : "";
+  (panel.meses || []).forEach((m) => select.append(new Option(`${capitalizar(mesTexto(m))}${m === panel.proximoMes ? " · próximo mes" : ""}`, m)));
+  select.value = (panel.meses || []).includes(elegido) ? elegido : "";
 }
 
 async function cargarPanel() {
-  if (new URLSearchParams(location.search).has("demo")) {
-    demo = true;
-    panel = DEMO;
-    $("demo").hidden = false;
-    llenarMeses();
-    pintarTablas();
-    return;
-  }
   try {
-    let r;
-    try {
-      r = await pedir("/actualizaciones/panel");
-    } catch (err) {
-      // Una ruta que no existe responde 404 sin cabeceras CORS y el navegador lo ve como una caída de red.
-      // Para distinguirlo de un backend apagado se prueba una ruta que sí existe.
-      await pedir("/pagos/panel"); // si también falla, el backend está apagado y se muestra el aviso
-      r = { ok: false, estado: 404, cuerpo: {} };
-    }
+    const r = await pedir("/actualizaciones/panel");
+    if (!r.ok) throw new Error("panel");
     $("offline").hidden = true;
-    if (r.ok) {
-      demo = false;
-      panel = r.cuerpo;
-    } else if (r.estado === 404 || r.estado === 405) {
-      // el servidor está andando pero todavía no tiene este caso de uso
-      demo = true;
-      panel = DEMO;
-    } else {
-      throw new Error("panel");
-    }
-    $("demo").hidden = !demo;
+    panel = r.cuerpo;
     llenarMeses();
-    pintarTablas();
   } catch (err) {
     $("offline").hidden = false;
   }
 }
 
-$("buscador").addEventListener("input", pintarTablas);
-$("mes").addEventListener("change", pintarTablas);
+// Pide una página de una de las tablas. Con "reiniciar" vuelve a la primera (cambió el mes o la búsqueda).
+async function cargarLista(lista, reiniciar) {
+  if (reiniciar) {
+    lista.cursores = [null];
+    lista.pagina = 0;
+  }
+  const mio = ++lista.pedido;
+  const params = new URLSearchParams({ tamanio: lista.tamanio });
+  const mes = $("mes").value;
+  if (mes) params.set("mes", mes);
+  const texto = $("buscador").value.trim();
+  if (texto) params.set("q", texto);
+  if (lista.cursores[lista.pagina]) params.set("despues", lista.cursores[lista.pagina]);
+  try {
+    const r = await pedir(`${lista.ruta}?${params}`);
+    if (mio !== lista.pedido) return; // mientras tanto se pidió otra cosa: esta respuesta ya no vale
+    if (!r.ok) throw new Error(lista.ruta);
+    $("offline").hidden = true;
+    lista.datos = r.cuerpo;
+    if (lista.datos.siguiente) lista.cursores[lista.pagina + 1] = lista.datos.siguiente;
+    else lista.cursores.length = lista.pagina + 1;
+    pintarLista(aplicadas);
+    pintarLista(proximas);
+  } catch (err) {
+    $("offline").hidden = false;
+  }
+}
 
-cargarPanel();
+function cargarListas() {
+  cargarLista(aplicadas, true);
+  cargarLista(proximas, true);
+}
+
+async function cargarTodo() {
+  await cargarPanel();
+  cargarListas();
+}
+
+// ---------- eventos ----------
+
+$("buscador").addEventListener("input", () => {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(cargarListas, 300); // se busca en el servidor, sin pedir con cada letra
+});
+$("mes").addEventListener("change", cargarListas);
+[aplicadas, proximas].forEach((lista) => {
+  $(lista.anterior).addEventListener("click", () => {
+    if (lista.pagina > 0) {
+      lista.pagina--;
+      cargarLista(lista, false);
+    }
+  });
+  $(lista.siguiente).addEventListener("click", () => {
+    if (lista.datos.siguiente) {
+      lista.pagina++;
+      cargarLista(lista, false);
+    }
+  });
+});
+
+cargarTodo();

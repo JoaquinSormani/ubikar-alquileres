@@ -164,5 +164,7 @@ CREATE TABLE `ubikar`.`actualizacion_valor` (
   `factor` DECIMAL(10,6) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_actualizacion` (`idContrato`, `periodoDesde`),
+  KEY `idx_actualizacion_fecha` (`fecha`),
+  KEY `idx_actualizacion_periodo_fecha` (`periodoDesde`, `fecha`),
   FOREIGN KEY (`idContrato`) REFERENCES `ubikar`.`contrato` (`id`));
 

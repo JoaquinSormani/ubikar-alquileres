@@ -294,29 +294,30 @@ Los controladores del proyecto crean sus servicios con `new`, no con inyección:
 
 Los cobros **PAGADOS no se tocan nunca**. Para el cambio de monto alcanza con `PagoDAO.update(Connection, Pago)`, que ya existe.
 
-### 6.4 El endpoint que usa la pantalla
+### 6.4 Los endpoints que usa la pantalla
 
-**`GET /api/actualizaciones/panel`** (solo lectura):
+Son de solo lectura. Las dos tablas se piden **de a una página**, con la misma paginación por cursor de Registrar pago (no usa `OFFSET`: una actualización nueva no repite ni saltea filas en las páginas siguientes).
+
+**`GET /api/actualizaciones/panel`** devuelve lo mínimo para armar la pantalla:
 
 ```json
-{
-  "aplicadas": [
-    {"id":3,"fecha":"2026-10-15","idContrato":101,"direccion":"Belgrano 1250, 2.º B",
-     "inquilinos":[{"nombre":"Camila","apellido":"Rojas","dni":"30111222","telefono":"2664111222"}],
-     "indice":"ICL","periodicidad":3,"periodoDesde":"2026-10","valorAnterior":275818.25,"valorNuevo":292818.58,"porcentaje":6.16}
-  ],
-  "proximas": [
-    {"idContrato":3,"direccion":"Junin 700, depto 3",
-     "inquilinos":[{"nombre":"Juan","apellido":"Perez","dni":"30111222","telefono":"2664001122"}],
-     "indice":"ICL","periodicidad":3,"fechaAjuste":"2026-12-01","periodoDesde":"2026-12",
-     "valorActual":350621.31,"estado":"PROGRAMADA"}
-  ]
-}
+{"fecha":"2026-11-08","proximoMes":"2026-12","meses":["2026-12","2026-11","2026-10"]}
 ```
 
-- `aplicadas`: todas las filas de `actualizacion_valor`, la más reciente primero. `periodicidad` es cada cuántos meses se actualiza el contrato (`Contrato.periodicidadActualizacion`): la pantalla la muestra junto al porcentaje ("+ 6,28 % · trimestral") para que se entienda de qué período es el aumento. Agregá el campo al `record FilaActualizacion` y pasá `c != null ? c.getPeriodicidadActualizacion() : null`. El **filtro por mes lo hace la pantalla** con `periodoDesde` (no hace falta ningún parámetro en el endpoint). Los datos de `inquilinos` salen del contrato (como en `PagoServicio.panel`). `porcentaje = (factor − 1) × 100`.
-- `proximas`: **una por contrato vigente**, la próxima actualización que todavía no se aplicó (de la más cercana a la más lejana). `estado` es `"PROGRAMADA"` si la fecha de ajuste es futura o `"ESPERANDO_INDICE"` si ya llegó pero todavía no se pudo aplicar (por ejemplo, el IPC del mes no está publicado). `valorActual` es el valor vigente (el último `valorNuevo` aplicado o, si no hubo ninguno, `valorInicial`); el valor nuevo **no** se informa porque se calcula el día del ajuste. La pantalla las muestra al elegir un mes (con la opción "próximo mes" siempre disponible) para anticipar los avisos a los inquilinos.
-- Siempre **200**. No hay endpoints de escritura: lo único que escribe es la tarea programada.
+`meses` alimenta el selector: el mes que viene y los meses con actualizaciones aplicadas o esperando el índice, del más nuevo al más viejo.
+
+**`GET /api/actualizaciones/aplicadas`** y **`GET /api/actualizaciones/proximas`** aceptan, todos opcionales: `mes=AAAA-MM`, `q` (DNI por el principio, nombre o dirección; máximo 100 caracteres), `tamanio` (1 a 50; por defecto 10 las aplicadas y 5 las próximas) y `despues` (el cursor que devolvió la página anterior). Responden:
+
+```json
+{"filas":[ ... ],"total":8,"tamanio":10,"siguiente":"2026-10-01_8"}
+```
+
+`siguiente` es `null` cuando no hay más páginas. Un cursor mal formado o un `tamanio` fuera de rango responden **400**.
+
+- **Aplicadas:** filas de `actualizacion_valor`, la más reciente primero (`fecha DESC, id DESC`, cursor `AAAA-MM-DD_id`). Cada fila trae `id`, `fecha`, `idContrato`, `direccion`, `inquilinos`, `indice`, `periodicidad` (cada cuántos meses se actualiza el contrato; la pantalla la muestra junto al porcentaje, "+ 6,28 % · trimestral"), `periodoDesde`, `valorAnterior`, `valorNuevo` y `porcentaje = (factor − 1) × 100`.
+- **Próximas:** **una por contrato**, la próxima actualización que todavía no se aplicó, de la más cercana a la más lejana (cursor `AAAA-MM-DD_idContrato`). No existen como filas en la base: la fecha sale del contrato y de cuántas lleva aplicadas, así que se calculan con una sola consulta y solo se leen los datos de las filas de la página. `estado` es `"PROGRAMADA"` si la fecha de ajuste es futura o `"ESPERANDO_INDICE"` si ya llegó pero todavía no se pudo aplicar (por ejemplo, el IPC del mes no está publicado). `valorActual` es el valor vigente; el valor nuevo **no** se informa porque se calcula el día del ajuste.
+- Índices que usa la consulta: `idx_actualizacion_fecha (fecha)` e `idx_actualizacion_periodo_fecha (periodoDesde, fecha)`. Están en `bd_ubikar.sql`; si la base ya existía, ejecutar una vez `bd_migracion_indice_actualizaciones.sql` (se puede repetir sin problema).
+- No hay endpoints de escritura: lo único que escribe es la tarea programada.
 
 Para probar la parte automática sin esperar a la madrugada, alcanza con **reiniciar el backend** (corre al arrancar) o llamar al método desde un test. Para la demo conviene tener un contrato de hace unos meses con periodicidad corta, para que al arrancar se vea una actualización aplicada.
 
@@ -324,11 +325,9 @@ Para probar la parte automática sin esperar a la madrugada, alcanza con **reini
 
 `frontend/pages/actualizacion.html|js|css`, enlazada desde `index.html`:
 
-- Pantalla **"Visualizar actualizaciones"**: tabla **"Actualizaciones"** (fecha, inquilino, propiedad, índice, desde cuándo rige, valor anterior y nuevo, con el porcentaje) y un botón **Avisar** que abre WhatsApp con el mensaje armado.
-- **Selector de mes** (igual que en Registrar Pago) con los meses en que hubo actualizaciones, y buscador por DNI, nombre o propiedad.
-- **Modo demostración:** mientras el servidor responda 404 en `/api/actualizaciones/panel`, la pantalla muestra datos de ejemplo con un aviso. Apenas exista el endpoint, pasa sola a los datos reales. Con `?demo` al final de la dirección se fuerza el modo demostración.
-
-Si cambiás nombres de campos en el JSON, avisá para ajustar `actualizacion.js` (los datos de ejemplo están al principio del archivo y muestran la forma exacta).
+- Pantalla **"Visualizar actualizaciones"** con dos tablas paginadas: **"Actualizaciones aplicadas"** (10 por página: fecha, inquilino, propiedad, índice, desde cuándo rige, valor anterior y nuevo con el porcentaje) y **"Próximas actualizaciones"** (5 por página: fecha de ajuste, valor actual y estado). Cada fila tiene un botón **Avisar** que abre WhatsApp con el mensaje armado.
+- **Selector de mes** (igual que en Registrar Pago) y buscador por DNI, nombre o propiedad: ambos filtran en el servidor y vuelven a la primera página.
+- Cada tabla tiene su paginador (**Anterior / Siguiente**, "Mostrando 1–10 de N").
 
 ### 6.6 Pruebas (sin red ni base, así `mvn package` no depende de nada)
 

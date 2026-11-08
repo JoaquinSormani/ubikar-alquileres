@@ -183,15 +183,15 @@ public class PagoServicio {
         return new PaginaPagos(filas, pagoDAO.contarRealizados(periodo, busqueda), n, siguiente);
     }
 
-    private static final String MENSAJE_CURSOR = "El punto de partida de la página no es válido.";
+    static final String MENSAJE_CURSOR = "El punto de partida de la página no es válido.";
 
-    private static int tamanioValido(Integer tamanio, int porDefecto) {
+    static int tamanioValido(Integer tamanio, int porDefecto) {
         int n = tamanio == null ? porDefecto : tamanio;
         requerido(n >= 1 && n <= TAMANIO_MAXIMO, "El tamaño de la página tiene que estar entre 1 y " + TAMANIO_MAXIMO + ".");
         return n;
     }
 
-    private static String busquedaValida(String texto) {
+    static String busquedaValida(String texto) {
         String busqueda = texto == null ? "" : texto.trim();
         requerido(busqueda.length() <= LARGO_MAXIMO_BUSQUEDA, "La búsqueda no puede superar los " + LARGO_MAXIMO_BUSQUEDA + " caracteres.");
         return busqueda;
@@ -392,7 +392,7 @@ public class PagoServicio {
         return Formato.mes(m.atDay(1)) + " de " + m.getYear();
     }
 
-    private static void requerido(boolean condicion, String mensaje) {
+    static void requerido(boolean condicion, String mensaje) {
         if (!condicion) {
             throw new IllegalArgumentException(mensaje);
         }
