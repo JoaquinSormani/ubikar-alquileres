@@ -1,6 +1,6 @@
 # Guía de la demostración en vivo — UBIKAR
 
-Esta guía sirve para armar el sistema en otra computadora (la netbook de Matías) y para ensayar y hacer la demostración de **Registrar pago**, que es el caso de uso que pidió ver la cátedra. Dura unos 5 minutos.
+Esta guía sirve para armar el sistema en otra computadora (la netbook de Matías) y para ensayar y hacer la demostración en vivo, que tiene **dos partes**: **Registrar contrato** (unos 2:30) y **Registrar pago** (unos 3:30). Dura unos 6 minutos en total.
 
 ---
 
@@ -70,7 +70,7 @@ Abrir **http://localhost:8081/api/pagos/panel**: tiene que mostrar un JSON con `
 
 ## 2. Ensayar y volver al punto de partida
 
-Cada vez que se registra un pago, ese cobro deja de estar pendiente. Hay 8 pendientes y solo 2 vencidos, así que **después de cada ensayo** conviene restaurar los datos: en Workbench, abrir y ejecutar de nuevo **`bd_datos_presentacion.sql`** (con el rayo). El backend puede seguir corriendo. Después recargar el navegador (F5).
+Cada vez que se registra un pago, ese cobro deja de estar pendiente, y cada contrato que se registra ocupa una propiedad libre y suma un archivo Word en `documentos\contratos`. Hay 8 pendientes y solo 2 vencidos, y solo 3 propiedades libres (7, 8 y 9), así que **después de cada ensayo** conviene restaurar los datos: en Workbench, abrir y ejecutar de nuevo **`bd_datos_presentacion.sql`** (con el rayo). El backend puede seguir corriendo. Después recargar el navegador (F5).
 
 Ese archivo **borra todos los datos** y vuelve a cargar los de ejemplo (no toca la estructura). **No ejecutarlo durante la exposición.**
 
@@ -78,7 +78,27 @@ Ese archivo **borra todos los datos** y vuelve a cargar los de ejemplo (no toca 
 
 ---
 
-## 3. Guion de la demostración (Registrar pago)
+## 3. Guion de la demostración
+
+Se hacen **en este orden**: primero Registrar contrato (3.1) y después Registrar pago (3.2). El contrato que se registra en 3.1 empieza el mes que viene, así que **no agrega cobros** a los de este mes y los números de 3.2 no cambian.
+
+### 3.1 Registrar contrato (unos 2:30)
+
+Datos ya cargados que se usan (están libres en la base de la demo): propietario **Héctor Dominguez** (DNI **17234567**) con la propiedad **Ayacucho 330, casa**; inquilina **Florencia Luna** (DNI **39444555**); garante **Raúl Ponce** (DNI **14222333**).
+
+| # | Hacés | Decís | Se ve |
+|---|---|---|---|
+| 1 | En el inicio, clic en la tarjeta **Nuevo contrato de alquiler**. En el paso **Propiedad**, escribir el DNI `17234567` y buscar. Elegir **Ayacucho 330, casa**. **Siguiente**. | "Registrar contrato sigue el proceso de negocio del alta. Primero buscamos al propietario por DNI y elegimos su propiedad." | Aparecen los datos de Héctor Dominguez y el selector de propiedades. |
+| 2 | Paso **Inquilinos**: DNI `39444555` y buscar. **Siguiente**. | "El inquilino también se busca por DNI: como ya está registrado, el sistema completa sus datos." | Los datos de Florencia Luna se completan solos. |
+| 3 | Paso **Garantía**: elegir **Fiador solidario**. Cargar al garante con el DNI `14222333`. **Siguiente**. | "Según la garantía, el sistema pide un garante." | Aparece el bloque del garante con los datos de Raúl Ponce. |
+| 4 | Paso **Condiciones**: destino **Vivienda**; fecha de inicio el **primer día del mes que viene**; duración `24`; alquiler `280000`; actualización cada `3` meses; índice **ICL**; modelo **Estándar UBIKAR**. Dejar el depósito vacío. **Siguiente**. | "La fecha de fin, los montos en letras y las fechas de la firma los calcula el sistema." | La línea de datos calculados con la fecha de fin. |
+| 5 | Paso **Inventario**: llega armado con las características de la propiedad (3 dormitorios, cocina, living). Mostrarlo y, si se quiere, cambiar el estado de un elemento. **Siguiente**. | "El inventario llega armado con las características de la propiedad y se anexa al contrato." | Aviso de inventario precargado y los elementos por ambiente. |
+| 6 | Paso **Revisión**: recorrer el resumen y clic en **Generar contrato**. | "Se guarda todo junto: el contrato, el inventario y la documentación, y se crea el contrato en Word." | Pantalla **Contrato registrado**. |
+| 7 | Clic en el enlace de descarga del Word y abrirlo. | "Este es el contrato listo para imprimir y firmar." | El documento con las cláusulas y el inventario. |
+
+**Después de este paso la propiedad Ayacucho 330 queda ocupada.** Si hay que repetir la demostración, usar otra propiedad libre (Lafinur 56, depto 5, de Roberto Aguirre, DNI `20345678`; o Mitre 801, local 2, de María Gimenez, DNI `28555444`) o restaurar los datos (sección 2).
+
+### 3.2 Registrar pago (unos 3:30)
 
 Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 95, local 3**. Usar uno de ellos.
 
@@ -100,6 +120,7 @@ Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 9
 
 ## 4. Plan B
 
+- **Falla Registrar contrato** (por ejemplo, no descarga el Word): mostrar la pantalla **Contrato registrado** y seguir con Registrar pago; el contrato ya figura en la lista de contratos.
 - **Falla el PDF o el backend:** tener abierta otra pestaña con la tabla de *Pagos realizados* y mostrar un recibo ya emitido.
 - **El backend no arranca:** verificar que el servicio de MySQL esté en marcha y que la contraseña de `root` esté cargada (paso 4 de la sección 1).
 - **El puerto 8081 está ocupado:** cerrar el otro programa Java que lo esté usando (el puerto del backend está fijo).
@@ -111,6 +132,7 @@ Los pendientes vencidos de octubre son **Colón 480, depto 1** y **San Martín 9
 - [ ] Backend corriendo (`Started UbikarApplication`).
 - [ ] Frontend en `http://localhost:5500/index.html` y sesión iniciada.
 - [ ] `http://localhost:8081/api/pagos/panel` devuelve 8 pendientes y 36 realizados.
-- [ ] Datos restaurados (sin ensayos hechos encima).
+- [ ] Datos restaurados (sin ensayos hechos encima): Ayacucho 330 libre y 8 pendientes.
+- [ ] Probar que el Word del contrato se descarga y se abre (Word o visor instalado en la netbook).
 - [ ] Internet o hotspot conectado.
 - [ ] Una pestaña con *Pagos realizados* lista como plan B.
