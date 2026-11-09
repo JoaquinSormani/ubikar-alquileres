@@ -11,8 +11,8 @@ Se habla a unas 140 palabras por minuto. Cada texto está escrito para durar lo 
 
 | Quién | Diapositivas | Tiempo de diapositivas | Demo | Total |
 |---|---|---|---|---|
-| **Joaquín** | 1 a 8: portada, problema, dominio, BPMN (2), casos de uso (2), casos más importantes | 4:30 | 1:10 (pasos 1 y 2) | **5:40** |
-| **Ana** | 9 a 14: arquitectura, componentes, patrones y el diseño de Registrar contrato (3) | 4:10 | 1:30 (pasos 3 a 5) | **5:40** |
+| **Ana** | 1 a 8: portada, problema, dominio, BPMN (2), casos de uso (2), casos más importantes | 4:30 | 1:10 (pasos 1 y 2) | **5:40** |
+| **Joaquín** | 9 a 14: arquitectura, componentes, patrones y el diseño de Registrar contrato (3) | 4:10 | 1:30 (pasos 3 a 5) | **5:40** |
 | **Mati** | 15 a 17: el diseño de Registrar pago (3); y el cierre (19) | 3:00 | 2:20 (pasos 6 a 9) | **5:20** |
 
 La demo (diapositiva 18) la cuenta cada uno desde su parte. **Mati maneja el mouse** (es su netbook) y quien habla dice qué se está viendo. Mati cuenta el diseño de Registrar pago justo antes de la demo, así que el pase es natural.
@@ -25,20 +25,20 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 
 | # | Diapositiva | Quién | Tiempo | Acumulado |
 |---|---|---|---|---|
-| 1 | Portada | Joaquín | 0:15 | 0:15 |
-| 2 | El problema | Joaquín | 0:50 | 1:05 |
-| 3 | Modelo de dominio | Joaquín | 0:45 | 1:50 |
-| 4 | BPMN 1/2 | Joaquín | 0:40 | 2:30 |
-| 5 | BPMN 2/2 | Joaquín | 0:35 | 3:05 |
-| 6 | Casos de uso 1/2 | Joaquín | 0:25 | 3:30 |
-| 7 | Casos de uso 2/2 | Joaquín | 0:25 | 3:55 |
-| 8 | Casos de uso más importantes | Joaquín | 0:35 | 4:30 |
-| 9 | Arquitectura en capas | Ana | 0:50 | 5:20 |
-| 10 | Componentes | Ana | 0:30 | 5:50 |
-| 11 | Patrones | Ana | 0:40 | 6:30 |
-| 12 | Registrar contrato: secuencia 1/2 | Ana | 0:45 | 7:15 |
-| 13 | Registrar contrato: secuencia 2/2 | Ana | 0:40 | 7:55 |
-| 14 | Registrar contrato: clases | Ana | 0:45 | 8:40 |
+| 1 | Portada | Ana | 0:15 | 0:15 |
+| 2 | El problema | Ana | 0:50 | 1:05 |
+| 3 | Modelo de dominio | Ana | 0:45 | 1:50 |
+| 4 | BPMN 1/2 | Ana | 0:40 | 2:30 |
+| 5 | BPMN 2/2 | Ana | 0:35 | 3:05 |
+| 6 | Casos de uso 1/2 | Ana | 0:25 | 3:30 |
+| 7 | Casos de uso 2/2 | Ana | 0:25 | 3:55 |
+| 8 | Casos de uso más importantes | Ana | 0:35 | 4:30 |
+| 9 | Arquitectura en capas | Joaquín | 0:50 | 5:20 |
+| 10 | Componentes | Joaquín | 0:30 | 5:50 |
+| 11 | Patrones | Joaquín | 0:40 | 6:30 |
+| 12 | Registrar contrato: secuencia 1/2 | Joaquín | 0:45 | 7:15 |
+| 13 | Registrar contrato: secuencia 2/2 | Joaquín | 0:40 | 7:55 |
+| 14 | Registrar contrato: clases | Joaquín | 0:45 | 8:40 |
 | 15 | Registrar pago: secuencia 1/2 | Mati | 0:55 | 9:35 |
 | 16 | Registrar pago: secuencia 2/2 | Mati | 0:50 | 10:25 |
 | 17 | Registrar pago: clases | Mati | 0:55 | 11:20 |
@@ -51,7 +51,7 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 
 ## 3. Texto sugerido
 
-### Joaquín — diapositivas 1 a 8 (4:30)
+### Ana — diapositivas 1 a 8 (4:30)
 
 **1. Portada (0:15)**
 > Buenos días. Somos Joaquín Catalá Sormani, Matías Facchini y Ana Paula Ramírez Juárez. Les presentamos **UBIKAR, un sistema de gestión de alquileres**: el caso de estudio, los modelos de análisis y de diseño, y al final lo mostramos funcionando.
@@ -77,11 +77,11 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 **8. Casos de uso más importantes (0:35)**
 > De los 37, estos cuatro son los más importantes y son los que **implementamos**: **Registrar propiedad**, **Registrar contrato**, **Registrar pago** y **Visualizar actualizaciones**, donde el sistema ajusta solo el alquiler por ICL o IPC. De los cuatro, mostramos el diseño de los dos centrales, **Registrar contrato y Registrar pago**; este último lo van a ver en vivo.
 
-> **Pase a Ana:** "Con los casos de uso claros, Ana les muestra el diseño."
+> **Pase a Joaquín:** "Con los casos de uso claros, Joaquín les muestra el diseño."
 
 ---
 
-### Ana — diapositivas 9 a 14 (4:10)
+### Joaquín — diapositivas 9 a 14 (4:10)
 
 **9. Arquitectura en capas (0:50)**
 > La arquitectura tiene **cinco capas** y cada una solo habla con la siguiente. El **navegador** se comunica por HTTP y JSON con el **controlador**, una API REST con Spring Boot. El controlador llama al **servicio**, donde están las reglas de cada caso de uso, y este accede a los datos por medio de los **DAO**, uno por entidad, con SQL2o. Abajo está **MySQL**, en Docker. Responde al requerimiento de **mantenibilidad**: se pueden sumar módulos, como venta o tasación, sin cambiar la estructura.
@@ -116,7 +116,7 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 **17. Registrar pago: clases (0:55)**
 > Y las clases, con el mismo esquema que Registrar contrato. El formulario llama a **PagoControlador**, que delega en **PagoServicio**. El servicio usa la clase **Punitorio** para la mora y la interfaz **GeneradorRecibo**, que es el **Strategy**: ReciboPdf es la implementación de hoy, y agregar otro formato es agregar una clase, sin tocar el servicio. El acceso a datos es **PagoDAO**, con el CRUD completo, y la conexión viene de Sql2oDAO, el Singleton. Con esto terminamos el diseño: pasamos a **mostrarlo funcionando**.
 
-> **Pase a la demo:** "Joaquín arranca la demostración."
+> **Pase a la demo:** "Ana arranca la demostración."
 
 ---
 
@@ -124,10 +124,10 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 
 Tener el backend, la base y el navegador ya iniciados (ver `docs/Guia_Demo_En_Vivo.md`). Los datos de la demo ya están cargados.
 
-**Joaquín (1:10): pasos 1 y 2**
+**Ana (1:10): pasos 1 y 2**
 > Vamos a ver **Registrar pago**. Acá están las dos tablas: los **pagos pendientes**, de a cinco por página y con los más vencidos primero, y los **pagos realizados**, de a diez. Puedo **filtrar por mes** y **buscar por DNI, nombre o propiedad**; la búsqueda se hace en el servidor, por eso es rápida aunque haya muchos pagos. Elijo un cobro **vencido** de octubre.
 
-**Ana (1:30): pasos 3 a 5**
+**Joaquín (1:30): pasos 3 a 5**
 > Se abre la ventana de **cobro**. Ingreso la fecha y la forma de pago, por ejemplo transferencia. El sistema calcula solo la mora: el **alquiler**, el **punitorio** a razón de 1 % diario por los días de atraso y el **total a cobrar**. Si cambio la fecha a una **anterior al vencimiento**, el punitorio baja a cero y el total se recalcula. La dejo en hoy y **registro el pago**.
 
 **Mati (2:20): pasos 6 a 9**
@@ -149,11 +149,11 @@ El material de respaldo está en el **apéndice** del deck.
 
 | Tema | Responde | Dónde está |
 |---|---|---|
-| Qué cubre el alcance y qué no | Joaquín | Apéndice: *Alcance del sistema* |
-| Cómo se relaciona el Proceso Unificado con lo que hicimos | Joaquín | Apéndice: *Los tres pilares* y *Workflows y modelos* |
-| Por qué cada capa hace lo que hace | Ana | Apéndice: *Qué hace y qué no hace cada capa* y *Un pedido de punta a punta* |
-| Diseño de Registrar propiedad y de Registrar inventario | Ana | Apéndice: diagramas de propiedad e inventario |
-| Seguridad y copias de seguridad | Ana | Apéndice: *Qué hicimos y qué falta* y *Copias de seguridad* |
+| Qué cubre el alcance y qué no | Ana | Apéndice: *Alcance del sistema* |
+| Cómo se relaciona el Proceso Unificado con lo que hicimos | Ana | Apéndice: *Los tres pilares* y *Workflows y modelos* |
+| Por qué cada capa hace lo que hace | Joaquín | Apéndice: *Qué hace y qué no hace cada capa* y *Un pedido de punta a punta* |
+| Diseño de Registrar propiedad y de Registrar inventario | Joaquín | Apéndice: diagramas de propiedad e inventario |
+| Seguridad y copias de seguridad | Joaquín | Apéndice: *Qué hicimos y qué falta* y *Copias de seguridad* |
 | Especificación de Registrar pago (flujos alternativos) | Mati | Apéndice: *Registrar pago, en una hoja* |
 | Diseño de Consultar tablero | Mati | Apéndice: diagramas del tablero |
 | Cómo se calcula el ICL y el IPC, y su diseño | Mati | Apéndice: *ICL e IPC* y diagramas de actualización |
