@@ -76,7 +76,7 @@ Lo que exige la cátedra y dónde está: el CE (2), el modelo de dominio (3), un
 > En la segunda mitad están los cobros. **Registrar pago incluye Emitir recibo** y se extiende con **Calcular punitorio por mora**; **Consultar tablero** también extiende a Registrar pago. Del lado del Tiempo están los casos automáticos: **Calcular actualización según índice**, Finalizar contrato y Detectar pagos vencidos.
 
 **8. Casos de uso más importantes (0:35)**
-> De los 37, estos cuatro son los más importantes y son los que **implementamos**: **Registrar propiedad**, **Registrar contrato**, **Registrar pago** y **Visualizar actualizaciones**, donde el sistema ajusta solo el alquiler por ICL o IPC. De los cuatro, mostramos el diseño de los dos centrales, **Registrar contrato y Registrar pago**, y esos dos son los que van a ver funcionando en vivo.
+> De los 37, estos cuatro son los más importantes y son los que **implementamos**: **Registrar propiedad**, **Registrar contrato**, **Registrar pago** y **Calcular Actualización según Índice (ICL/IPC)**, donde el sistema ajusta solo el alquiler. De los cuatro, mostramos el diseño de los dos centrales, **Registrar contrato y Registrar pago**, y esos dos son los que van a ver funcionando en vivo.
 
 > **Pase a Joaquín:** "Con los casos de uso claros, Joaquín les muestra el diseño."
 
